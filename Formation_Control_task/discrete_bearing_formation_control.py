@@ -46,7 +46,7 @@ for node_i in range(NN):
         Pg_stack[node_i,node_j,:,:] = Pg_ij
 
 ## Pg_ij is always the same, but the Matrix B is computed according to the Adjacency Matrix of the graph
-G = nx.binomial_graph(NN, 0.7)
+G = nx.binomial_graph(NN, 0.8)
 Adj = nx.adjacency_matrix(G).toarray()
 print(Adj)
 fig = plt.figure()
@@ -56,4 +56,5 @@ plt.show()
 B = bearing_dynamics(np.random.randn((d*NN)), Pg_stack, Adj, d)
 print(B)
 print(B.shape)
+
 
