@@ -52,7 +52,7 @@ def proj_matrix(vec_pi:np.array, vec_pj:np.array, d = None):
     return None"""
 
 
-def bearing_dynamics(x:np.array, Pg_stack, Adj:np.array, d:int):
+def bearing_dynamics(x:np.array, Pg_stack:np.array, Adj:np.array, d:int):
     # function which computes the bearing dynamics of the reference paper
     # first it computes the matrix B(G(p))
     # then discretize the dynamics according to forward Euler
