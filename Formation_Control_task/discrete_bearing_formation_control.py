@@ -9,11 +9,13 @@ NN = 4  # number of agents
 d = 2  # dimension of the pos/vel vector (2-dimensional or 3-dimension motion)
 n_leaders = 2
 dt = int(10e-4)
+max_iter = 250
 
+p_plus = np.zeros((d*NN, 1, max_iter))
+v_plus = np.zeros((d*NN, 1, max_iter))
 
-P0 = np.random.rand((d*NN))  # random initial conditions for position and velocity of all the agents
-V0 = np.random.rand((d*NN))
-# NB X = [ p, v].T where p is a vector d*N and v is a vector d*N, x is a vector 2*d*N
+p_plus[:,:,0] = np.random.rand((d*NN))  # random initial conditions for position and velocity of all the agents
+v_plus[:,:,0] = np.random.rand((d*NN))
 
 B = np.zeros((d*NN, d*NN))  # Initialization of Bearing Laplacian
 
@@ -61,7 +63,9 @@ nx.draw(G, with_labels=True)
 plt.show()
 
 B = bearing_laplacian(Pg_stack, Adj, d)
-p_plus, v_plus = bearing_dynamics(P0, V0, B, dt)
+
+for t in range(max_iter-1):
+    p_plus[:,:,t+1], v_plus[:,:,t+1] = bearing_dynamics(p_plus[:,:,0], v_plus[:,:,0], B, dt)
 
 print(B)
 print(B.shape)
