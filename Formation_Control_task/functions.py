@@ -68,10 +68,3 @@ def bearing_dynamics(p_t: np.array, v_t: np.array, B: np.array, dt: int):
         return pos_plus, vel_plus
     else:
         print("Error in Bearing Dynamics: Pos vector and Vel vector dimensions are not consistent")
-
-
-
-
-
-
-
