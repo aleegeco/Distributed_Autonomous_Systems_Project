@@ -18,7 +18,6 @@ def bearing_vector(vec_pi:np.array, vec_pj:np.array, d = None):
     g_ij = (vec_pj - vec_pi) / np.linalg.norm(vec_pj - vec_pi) # unit distance vector
     return g_ij
 
-
 def proj_matrix(vec_pi:np.array, vec_pj:np.array, d = None):
     # Function that computes the Projection Matrix based on the vectors p_i and p_j
     if d:
@@ -31,26 +30,6 @@ def proj_matrix(vec_pi:np.array, vec_pj:np.array, d = None):
         Id = np.identity(d1)
         Pg_ij = Id - g_ij@g_ij.T
     return Pg_ij
-
-"""def bearing_dynamics(x, Pg_stack, Adj, d):
-    N, _ = np.shape(Adj)
-    nx = np.size(x)
-    B = np.zeros((d*N,d*N))
-
-    if N == nx/2: # check if the vector dimension if consistent
-        for node_i in range(N):
-            list_neigh_i = np.nonzero(Adj[node_i])[0] # neighbors of the node i
-            list_index_i = node_i*d + np.arange(d)
-            for node_j in list_neigh_i:
-                list_index_j = node_j*d + np.arange(d)
-                if node_i != node_j:
-                    Pg_ij = Pg_stack[node_i,node_j,:,:]
-                    B[list_index_i, list_index_j] = - Pg_ij
-
-
-
-    return None"""
-
 
 def bearing_laplacian(Pg_stack:np.array, Adj:np.array, d:int):
     # function which computes the bearing laplacian
