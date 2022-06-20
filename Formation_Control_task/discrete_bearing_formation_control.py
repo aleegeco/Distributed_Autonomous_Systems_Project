@@ -8,14 +8,15 @@ from functions import *
 NN = 4  # number of agents
 d = 2  # dimension of the pos/vel vector (2-dimensional or 3-dimension motion)
 n_leaders = 2
+n_follower = NN - n_leaders
 dt = int(10e-4)
 max_iter = 250
 
 p_plus = np.zeros((d*NN, 1, max_iter))
 v_plus = np.zeros((d*NN, 1, max_iter))
 
-p_plus[:,:,0] = np.random.rand((d*NN))  # random initial conditions for position and velocity of all the agents
-v_plus[:,:,0] = np.random.rand((d*NN))
+p_plus[:,:,0] = np.random.rand((d*NN)).reshape([d*NN, 1])  # random initial conditions for position and velocity of all the agents
+v_plus[:,:,0] = np.random.rand((d*NN)).reshape([d*NN, 1])
 
 B = np.zeros((d*NN, d*NN))  # Initialization of Bearing Laplacian
 
@@ -42,6 +43,10 @@ Node_pos[3, :, :] = np.array([
     [5, 1]
     ]).T
 
+p_plus[[0, 1],:,0] = Node_pos[0, :, :]
+p_plus[[2, 3],:,0] = Node_pos[1, :, :]
+
+
 Pg_stack = np.zeros((NN, NN, d, d))  # it stores all the matrices Pg_ij ( d x d )
 # it is a tensor of dimension 4 NN,NN of dimension (dxd)
 # to extract Pg_ij you must Pg_stack[node_i, node_j,:,:]
@@ -57,16 +62,21 @@ for node_i in range(NN):
 # Pg_ij is always the same, but the Matrix B is computed according to the Adjacency Matrix of the graph
 G = nx.binomial_graph(NN, 0.8)
 Adj = nx.adjacency_matrix(G).toarray()
-print(Adj)
+
+B = bearing_laplacian(Pg_stack, Adj, d)
+
+
 fig = plt.figure()
 nx.draw(G, with_labels=True)
 plt.show()
 
-B = bearing_laplacian(Pg_stack, Adj, d)
+Bff = B[d*n_leaders:d*NN, d*n_leaders:d*NN]
+Bfl = B[d*n_leaders:d*NN, :d*n_leaders]
 
-for t in range(max_iter-1):
-    p_plus[:,:,t+1], v_plus[:,:,t+1] = bearing_dynamics(p_plus[:,:,0], v_plus[:,:,0], B, dt)
+pos_leader = Node_pos[[0, 1], :, :].reshape([4, 1])
+if np.linalg.det(Bff) != 0:
+    print("The matrix Bff is not singular")
+    pf_star = - np.linalg.inv(Bff) @ Bfl @ pos_leader
+else:
+    print("The matrix Bff is singular! Check the Graph")
 
-print(B)
-print(B.shape)
-print("p_t+1 ={}".format(p_plus), "v_t+1={}".format(v_plus))
