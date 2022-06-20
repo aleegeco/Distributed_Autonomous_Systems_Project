@@ -76,11 +76,8 @@ for t in range(max_iter-1):
 
 figure = plt.figure()
 
-for node in range(NN):
-    for time in range(max_iter):
-        index = d*node + np.arange(d)
-        p_x = xx[index[0],:,time]
-        p_y = xx[index[1],:,time]
-        plt.plot(p_x, p_y)
+# for time in range(max_iter):
+#     plt.plot(xx[[i for i in range(NN) if i & 2 == 0],:,time],xx[range(0,NN,2),:,time])
+
 
 
