@@ -33,6 +33,17 @@ def proj_matrix(vec_pi: np.array, vec_pj: np.array, d=None):
         Pg_ij = Id - g_ij@g_ij.T
     return Pg_ij
 
+def proj_stack(pos_nodes:np.array, NN:int, d:int):
+    # function to define a tensor who store all projection matrices for the nodes
+    Pg_stack = np.zeros((NN, NN, d, d))  # tensor of dimension (NN, NN, d,d)
+    for node_i in range(NN):
+        for node_j in range(NN):
+            pos_j = pos_nodes[node_j, :, :]
+            pos_i = pos_nodes[node_i, :, :]
+            Pg_ij = proj_matrix(pos_i, pos_j)
+            Pg_stack[node_i, node_j, :, :] = Pg_ij
+    return Pg_stack
+
 
 def bearing_laplacian(Pg_stack: np.array, Adj: np.array, d: int):
     # function which computes the bearing laplacian

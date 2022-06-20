@@ -7,23 +7,22 @@ from functions import *
 # graph is time-varying, but let's build the simplest case to try the algorithm and then move formard
 NN = 4  # number of agents
 d = 2  # dimension of the pos/vel vector (2-dimensional or 3-dimension motion)
-n_leaders = 2
-n_follower = NN - n_leaders
+n_leaders = 2 # number of leaders
+n_follower = NN - n_leaders # number of followers
 dt = int(10e-4)
-max_iter = 250
+max_iter = 250 # number of iterations
 
 p_plus = np.zeros((d*NN, 1, max_iter))
 v_plus = np.zeros((d*NN, 1, max_iter))
 
-p_plus[:,:,0] = np.random.rand((d*NN)).reshape([d*NN, 1])  # random initial conditions for position and velocity of all the agents
-v_plus[:,:,0] = np.random.rand((d*NN)).reshape([d*NN, 1])
+p_plus[:,:,0] = np.random.rand((d*NN)).reshape([d*NN, 1])  # random initial conditions for position of all the agents
+v_plus[:,:,0] = np.random.rand((d*NN)).reshape([d*NN, 1]) # random initial conditions for velocities of all the agents
 
 B = np.zeros((d*NN, d*NN))  # Initialization of Bearing Laplacian
 
 Node_pos = np.zeros((NN, d, 1))  # it stores all the vector position for each node
 # it is a tensor with NN matrix of dimension (dxd)
 # to extract a specific vector position you should do Node_pos[i-th node,:,:]
-
 
 # try to reproduce a rectangle
 # Node 0, ( px py ).T
@@ -43,26 +42,17 @@ Node_pos[3, :, :] = np.array([
     [5, 1]
     ]).T
 
+# we impose the leaders positions
 p_plus[[0, 1],:,0] = Node_pos[0, :, :]
 p_plus[[2, 3],:,0] = Node_pos[1, :, :]
 
 
-Pg_stack = np.zeros((NN, NN, d, d))  # it stores all the matrices Pg_ij ( d x d )
-# it is a tensor of dimension 4 NN,NN of dimension (dxd)
-# to extract Pg_ij you must Pg_stack[node_i, node_j,:,:]
-
-# for cycles to populate the tensor Pg_stack
-for node_i in range(NN):
-    for node_j in range(NN):
-        pos_j = Node_pos[node_j, :, :]
-        pos_i = Node_pos[node_i, :, :]
-        Pg_ij = proj_matrix(pos_i, pos_j)
-        Pg_stack[node_i, node_j, :, :] = Pg_ij
 
 # Pg_ij is always the same, but the Matrix B is computed according to the Adjacency Matrix of the graph
 G = nx.binomial_graph(NN, 0.8)
 Adj = nx.adjacency_matrix(G).toarray()
 
+Pg_stack = proj_stack(Node_pos,NN,d)
 B = bearing_laplacian(Pg_stack, Adj, d)
 
 
