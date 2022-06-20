@@ -69,13 +69,32 @@ def bearing_laplacian(Pg_stack: np.array, Adj: np.array, d: int):
     return B
 
 
-def bearing_dynamics(p_t: np.array, v_t: np.array, B: np.array, dt: int):
-    # function which computes the forward-euler discretization of the Bearing Laplacian Model
-    n_p = np.shape(p_t)[0]
-    n_v = np.shape(v_t)[0]
-    if n_p == n_v:  # check the dimension of position and velocity vector
-        pos_plus = p_t + dt*(B@p_t)
-        vel_plus = v_t + dt*(B@v_t)
-        return pos_plus, vel_plus
+# def bearing_dynamics(p_t: np.array, v_t: np.array, B: np.array, dt: int):
+#     # function which computes the forward-euler discretization of the Bearing Laplacian Model
+#     n_p = np.shape(p_t)[0]
+#     n_v = np.shape(v_t)[0]
+#     if n_p == n_v:  # check the dimension of position and velocity vector
+#         pos_plus = p_t + dt*(B@p_t)
+#         vel_plus = v_t + dt*(B@v_t)
+#         return pos_plus, vel_plus
+#     else:
+#         print("Error in Bearing Dynamics: Pos vector and Vel vector dimensions are not consistent")
+
+def bearing_dynamics(x_t: np.array, u: np.array, Adj: np.array, dt: int, d: int, followers: list):
+    nx = np.shape(x_t)[0] # 2*d*n_agents
+    n_agents = np.shape(Adj)[0]
+    p_dot = x_t[0:d * n_agents]
+    v_dot = x_t[d * n_agents:]
+    if nx == 2*d*n_agents:
+        for node_i in followers:
+            neigh_i = np.nonzero(Adj[node_i])[0]
+            index_i = d*node_i + np.arange(d)
+            p_dot[index_i] = v_dot[index_i]
+            for node_j in neigh_i:
+                index_j = d*node_j + np.arange(d)
+                v_dot[index_i] = u
     else:
-        print("Error in Bearing Dynamics: Pos vector and Vel vector dimensions are not consistent")
+        print("Dimension of the state vector x_t is not consistent")
+    x_dot = np.concatenate((p_dot, v_dot))
+    x_plus = x_t + dt*x_dot
+    return x_plus

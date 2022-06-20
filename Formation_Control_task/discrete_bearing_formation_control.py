@@ -1,6 +1,5 @@
 import numpy as np
 import networkx as nx
-import control as ctrl
 import matplotlib.pyplot as plt
 from functions import *
 
@@ -11,7 +10,7 @@ n_leaders = 2 # number of leaders
 n_follower = NN - n_leaders # number of followers
 dt = int(10e-4)
 max_iter = 250 # number of iterations
-
+horizon = np.linspace(0, max_iter, dtype=int)
 p_plus = np.zeros((d*NN, 1, max_iter))
 v_plus = np.zeros((d*NN, 1, max_iter))
 
@@ -46,7 +45,8 @@ Node_pos[3, :, :] = np.array([
 p_plus[[0, 1],:,0] = Node_pos[0, :, :]
 p_plus[[2, 3],:,0] = Node_pos[1, :, :]
 
-
+xx = np.zeros((2*d*NN, 1, max_iter))
+xx[:,:,0] = np.concatenate((p_plus[:,:,0], v_plus[:,:,0]))
 
 # Pg_ij is always the same, but the Matrix B is computed according to the Adjacency Matrix of the graph
 G = nx.binomial_graph(NN, 0.8)
@@ -66,7 +66,21 @@ Bfl = B[d*n_leaders:d*NN, :d*n_leaders]
 pos_leader = Node_pos[[0, 1], :, :].reshape([4, 1])
 if np.linalg.det(Bff) != 0:
     print("The matrix Bff is not singular")
-    pf_star = - np.linalg.inv(Bff) @ Bfl @ pos_leader
+    pf_star = - np.linalg.inv(Bff)@Bfl@ pos_leader
 else:
     print("The matrix Bff is singular! Check the Graph")
+follow = [2, 3]
+uu = np.ones((2, 1, max_iter))
+for t in range(max_iter-1):
+    xx[:,:,t+1] = bearing_dynamics(xx[:,:,t], uu[:,:,t], Adj, dt, d, follow)
+
+figure = plt.figure()
+
+for node in range(NN):
+    for time in range(max_iter):
+        index = d*node + np.arange(d)
+        p_x = xx[index[0],:,time]
+        p_y = xx[index[1],:,time]
+        plt.plot(p_x, p_y)
+
 
