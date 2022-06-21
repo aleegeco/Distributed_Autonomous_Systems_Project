@@ -3,7 +3,7 @@
 
 
 # Distributed Autonomous Systems Course Project N°1
-This GitHub page contains solutions to Project N°1 of the Distributed Autonomous Systems course.
+This GitHub page contains solutions to [Project N°1](https://virtuale.unibo.it/mod/resource/view.php?id=891684) of the [Distributed Autonomous Systems course](https://www.unibo.it/en/teaching/course-unit-catalogue/course-unit/2021/454490).
 
 ## Task 1: Distributed Classification via Neural Networks
 
