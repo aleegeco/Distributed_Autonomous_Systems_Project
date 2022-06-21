@@ -24,4 +24,4 @@ This GitHub page contains solutions to [Project N°1](https://virtuale.unibo.it/
 
 
 ## References
-[1] S. Zhao and D. Zelazo, “Translational and scaling formation maneuver control via a bearing-based approach,” IEEE Transactions on Control of Network Systems, vol. 4, no. 3, pp. 429–438, 2015.
+[1] S. Zhao and D. Zelazo, “Translational and scaling formation maneuver control via a bearing-based approach,” IEEE Transactions on Control of Network Systems, vol. 4, no. 3, pp. 429–438, 2015. [Link of the paper](https://arxiv.org/pdf/1506.05636.pdf)
