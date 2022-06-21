@@ -8,8 +8,8 @@ NN = 4  # number of agents
 d = 2  # dimension of the pos/vel vector (2-dimensional or 3-dimension motion)
 n_leaders = 2 # number of leaders
 n_follower = NN - n_leaders # number of followers
-dt = int(10e-4)
-max_iter = 250 # number of iterations
+dt = int(10e-4) # discretization step
+max_iter = 10 # number of iterations
 horizon = np.linspace(0, max_iter, dtype=int)
 p_plus = np.zeros((d*NN, 1, max_iter))
 v_plus = np.zeros((d*NN, 1, max_iter))
@@ -51,14 +51,12 @@ xx[:,:,0] = np.concatenate((p_plus[:,:,0], v_plus[:,:,0]))
 # Pg_ij is always the same, but the Matrix B is computed according to the Adjacency Matrix of the graph
 G = nx.binomial_graph(NN, 0.8)
 Adj = nx.adjacency_matrix(G).toarray()
-
-Pg_stack = proj_stack(Node_pos,NN,d)
-B = bearing_laplacian(Pg_stack, Adj, d)
-
-
 fig = plt.figure()
 nx.draw(G, with_labels=True)
 plt.show()
+
+Pg_stack = proj_stack(Node_pos,NN,d)
+B = bearing_laplacian(Pg_stack, Adj, d)
 
 Bff = B[d*n_leaders:d*NN, d*n_leaders:d*NN]
 Bfl = B[d*n_leaders:d*NN, :d*n_leaders]
@@ -69,15 +67,20 @@ if np.linalg.det(Bff) != 0:
     pf_star = - np.linalg.inv(Bff)@Bfl@ pos_leader
 else:
     print("The matrix Bff is singular! Check the Graph")
+
+
+
 follow = [2, 3]
 uu = np.ones((2, 1, max_iter))
+
 for t in range(max_iter-1):
     xx[:,:,t+1] = bearing_dynamics(xx[:,:,t], uu[:,:,t], Adj, dt, d, follow)
 
 figure = plt.figure()
 
-# for time in range(max_iter):
-#     plt.plot(xx[[i for i in range(NN) if i & 2 == 0],:,time],xx[range(0,NN,2),:,time])
+for i in range(d*NN):
+    for time in range(max_iter):
+        plt.plot(xx[i*2,:,time],xx[1+2*i,:,time])
 
 
-
+print(xx[4,:,:])

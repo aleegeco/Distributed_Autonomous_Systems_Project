@@ -98,3 +98,12 @@ def bearing_dynamics(x_t: np.array, u: np.array, Adj: np.array, dt: int, d: int,
     x_dot = np.concatenate((p_dot, v_dot))
     x_plus = x_t + dt*x_dot
     return x_plus
+
+
+def node_info(x: np.array, n_agents: int, n_leaders: int, d:int):
+    # vec_pos = x[:d*n_agents]
+    # vec_vel = x[d*n_agents:]
+    # for i in range(n_leaders):
+    #
+    print("node_{0}: vel = {1}, pos = {2}")
+    return None
