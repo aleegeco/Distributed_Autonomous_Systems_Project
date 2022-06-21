@@ -1,4 +1,7 @@
-![Minimum PHP version: 7.4.0](https://badgen.net/badge/python/3.x/blue)
+![Minimum Python version >= 3.0](https://badgen.net/badge/python/3.x/blue)
+![Licence](https://badgen.net/badge/Licence/Unknown/blue)
+
+
 # Distributed Autonomous Systems Course Project N°1
 This GitHub page contains solutions to Project N°1 of the Distributed Autonomous Systems course.
 
