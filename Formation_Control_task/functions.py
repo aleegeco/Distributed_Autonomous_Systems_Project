@@ -17,7 +17,7 @@ def bearing_vector(vec_pi: np.array, vec_pj: np.array, d=None):
         pass
     else:
         print("WARNING! The dimension of the vector are not consistent. Check them")
-    g_ij = np.divide((vec_pj - vec_pi), np.linalg.norm(vec_pj - vec_pi))  # unit distance vector
+    g_ij = (vec_pj - vec_pi)/np.linalg.norm(vec_pj - vec_pi)  # unit distance vector
     return g_ij
 
 
@@ -70,20 +70,40 @@ def bearing_laplacian(Pg_stack: np.array, Adj: np.array, d: int):
                     B[i * d + k, j * d + z] = B_temp[i, j, k, z]
     return B
 
+# def bearing_dynamics(p_t: np.array, v_t: np.array, B: np.array, dt: int):
+#     # function which computes the forward-euler discretization of the Bearing Laplacian Model
+#     n_p = np.shape(p_t)[0]
+#     n_v = np.shape(v_t)[0]
+#     if n_p == n_v:  # check the dimension of position and velocity vector
+#         pos_plus = p_t + dt * (B @ p_t)
+#         vel_plus = v_t + dt * (B @ v_t)
+#         return pos_plus, vel_plus
+#     else:
+#         print("Error in Bearing Dynamics: Pos vector and Vel vector dimensions are not consistent")
 
-def bearing_dynamics(p_t: np.array, v_t: np.array, B: np.array, dt: int):
-    # function which computes the forward-euler discretization of the Bearing Laplacian Model
-    n_p = np.shape(p_t)[0]
-    n_v = np.shape(v_t)[0]
-    if n_p == n_v:  # check the dimension of position and velocity vector
-        pos_plus = p_t + dt * (B @ p_t)
-        vel_plus = v_t + dt * (B @ v_t)
-        return pos_plus, vel_plus
-    else:
-        print("Error in Bearing Dynamics: Pos vector and Vel vector dimensions are not consistent")
+
+def kron_dynamical_matrix(B: np.array, NN: int, n_leaders: int, k_p: int, k_v: int, d: int):
+    n_followers = NN - n_leaders
+    zeros_nl = np.zeros((n_leaders, 2*NN))
+    zeros_nf = np.zeros((n_followers, NN+n_leaders))
+    I_nf = np.identity((n_followers))
+    I_d = np.identity((d))
+
+    Bff = B[d * n_leaders:d * NN, d * n_leaders:d * NN]
+    Bfl = B[d * n_leaders:d * NN, :d * n_leaders]
+
+    A = np.concatenate((zeros_nf, I_nf), axis=1)
+    A = np.concatenate((zeros_nl, A), axis=0)
+    A = np.concatenate((A, zeros_nl), axis=0)
+
+    B_gains = np.concatenate((Bfl * k_p, Bff * k_p, Bfl * k_v, Bff * k_v), axis=1)
+
+    A_kron = np.kron(A, I_d)
+    A_kron = np.concatenate((A_kron, np.negative(B_gains)), axis=0)
+    return A_kron
 
 
-def formation(xx, horizon, Adj, NN, n_x, animate=True):
+def formation(xx: np.array, horizon: int, Adj: np.array, NN: int, n_x: int, animate=True):
     TT = np.size(horizon, 0)
     for tt in range(np.size(horizon, 0)):
         xx_tt = xx[:, tt].T
