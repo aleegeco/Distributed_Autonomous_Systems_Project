@@ -1,6 +1,5 @@
 import numpy as np
 import networkx as nx
-import control as ctrl
 import matplotlib.pyplot as plt
 from functions import *
 
@@ -13,7 +12,7 @@ n_leaders = 2  # number of leaders
 p_ER = 0.9
 n_follower = NN - n_leaders  # number of followers
 
-dt = 10e-5 # discretization step
+dt = 10e-4 # discretization step
 T_max = 100  # max simulation time
 horizon = np.linspace(0.0, T_max, int(T_max / dt))
 max_iter = 500  # max number of iterations
@@ -121,6 +120,9 @@ if FIGURE:
     plt.grid(visible=True)
     for i in range(NN):
         plt.plot(xx[i * 2, :], xx[i * 2 + 1, :], "r--", linewidth=0.5)
-        plt.plot(xx[i * 2, len(horizon) - 1], xx[i * 2 + 1, len(horizon) - 1], "ro")
+        if i < n_leaders:
+            plt.plot(xx[i * 2, len(horizon) - 1], xx[i * 2 + 1, len(horizon) - 1], "ro")  # leaders in red
+        else:
+            plt.plot(xx[i * 2, len(horizon) - 1], xx[i * 2 + 1, len(horizon) - 1], "bo") # followers in blue
 
 print("DAJE TUTTO OK")
