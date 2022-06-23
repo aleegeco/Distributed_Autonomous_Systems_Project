@@ -18,6 +18,7 @@ from std_msgs.msg import Float32MultiArray as msg_float
     #     dV_ij = ((x_i - x_j).T@(x_i - x_j) - dist[j]**2)*(x_i - x_j)
     #     xdot_i += - dV_ij
 
+### devo riscriverla e capire bene come farla
 def update_dynamics(dt, x_i, neigh, data, pos, A_kron, agent_id):
     n_x = x_i.shape
     xdot_i = np.zeros(n_x)
