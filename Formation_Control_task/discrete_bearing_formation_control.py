@@ -4,16 +4,17 @@ import control as ctrl
 import matplotlib.pyplot as plt
 from functions import *
 
+# Plot Settings - to impose usage of LaTeX as text renderer
 FIGURE = True
-# graph is time-varying, but let's build the simplest case to try the algorithm and then move forward
+
 NN = 4  # number of agents
 dd = 2  # dimension of the pos/vel vector (2-dimensional or 3-dimension motion)
 n_leaders = 2  # number of leaders
 p_ER = 0.9
 n_follower = NN - n_leaders  # number of followers
 
-dt = 0.1  # discretization step
-T_max = 50  # max simulation time
+dt = 10e-5 # discretization step
+T_max = 100  # max simulation time
 horizon = np.linspace(0.0, T_max, int(T_max / dt))
 max_iter = 500  # max number of iterations
 
@@ -95,17 +96,29 @@ for tt in range(len(horizon) - 1):
     xx[:, tt+1] = xx[:, tt] + dt*(A_kron @ xx[:, tt])
 
 if FIGURE:
-    plt.figure(2)
+    fig2 = plt.figure(2)
+    plt.title("Evolution of $p_y$")
+    plt.xlabel("time")
+    plt.ylabel("$p_y$")
+    plt.grid(visible=True)
     for i in range(NN):
         plt.plot(horizon, xx[i * 2, :])
         plt.plot(horizon, xx_star[i * 2, :], "r--", linewidth=0.5)
 
-    plt.figure(3)
+    fig3 = plt.figure(3)
+    plt.title("Evolution of $p_x$")
+    plt.xlabel("time")
+    plt.ylabel("$p_x$")
+    plt.grid(visible=True)
     for i in range(NN):
         plt.plot(horizon, xx[i * 2 + 1, :])
         plt.plot(horizon, xx_star[i * 2 + 1, :], "r--", linewidth=0.5)
 
-    plt.figure(4)
+    fig4 = plt.figure(4)
+    plt.title("Evolution of Nodes position in XY-plane")
+    plt.xlabel("$p_x$")
+    plt.ylabel("$p_y$")
+    plt.grid(visible=True)
     for i in range(NN):
         plt.plot(xx[i * 2, :], xx[i * 2 + 1, :], "r--", linewidth=0.5)
         plt.plot(xx[i * 2, len(horizon) - 1], xx[i * 2 + 1, len(horizon) - 1], "ro")
