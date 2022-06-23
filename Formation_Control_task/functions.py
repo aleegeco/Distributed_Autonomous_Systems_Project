@@ -49,20 +49,20 @@ def proj_stack(pos_nodes: np.array, NN: int, d: int):
 
 def bearing_laplacian(Pg_stack: np.array, Adj: np.array, d: int):
     # function which computes the bearing laplacian
-    # it computes the matrix B(G(p))
+    # it computes the matrix A_kron(G(p))
     n_agents = np.shape(Adj)[0]  # int representing number of agents
-    B_temp = np.zeros((n_agents, n_agents, d, d))  # tensor of 4 dimension to build matrix B
+    B_temp = np.zeros((n_agents, n_agents, d, d))  # tensor of 4 dimension to build matrix A_kron
     for node_i in range(n_agents):
         list_neigh_i = np.nonzero(Adj[node_i])[0]  # neighbors of node i
         for node_j in range(n_agents):
             if node_j in list_neigh_i:  # if the node j is a neighbor
                 if node_j != node_i:  # if the nodes are not the sa,e
                     B_temp[node_i, node_j, :, :] = - Pg_stack[node_i, node_j, :, :]
-            elif node_i == node_j:  # if the node are the same (block diagonal of matrix B)
+            elif node_i == node_j:  # if the node are the same (block diagonal of matrix A_kron)
                 for node_k in list_neigh_i:
                     B_temp[node_i, node_j, :, :] += Pg_stack[node_i, node_k, :, :]  # summation of the matrices Pg_ik
     B = np.zeros((d * n_agents, d * n_agents))
-    # another cycle to build the matrix B with the right dimensions
+    # another cycle to build the matrix A_kron with the right dimensions
     for i in range(n_agents):
         for j in range(n_agents):
             for k in range(d):
@@ -70,13 +70,13 @@ def bearing_laplacian(Pg_stack: np.array, Adj: np.array, d: int):
                     B[i * d + k, j * d + z] = B_temp[i, j, k, z]
     return B
 
-# def bearing_dynamics(p_t: np.array, v_t: np.array, B: np.array, dt: int):
+# def bearing_dynamics(p_t: np.array, v_t: np.array, A_kron: np.array, dt: int):
 #     # function which computes the forward-euler discretization of the Bearing Laplacian Model
 #     n_p = np.shape(p_t)[0]
 #     n_v = np.shape(v_t)[0]
 #     if n_p == n_v:  # check the dimension of position and velocity vector
-#         pos_plus = p_t + dt * (B @ p_t)
-#         vel_plus = v_t + dt * (B @ v_t)
+#         pos_plus = p_t + dt * (A_kron @ p_t)
+#         vel_plus = v_t + dt * (A_kron @ v_t)
 #         return pos_plus, vel_plus
 #     else:
 #         print("Error in Bearing Dynamics: Pos vector and Vel vector dimensions are not consistent")

@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from functions import *
 
 # Plot Settings - to impose usage of LaTeX as text renderer
-FIGURE = True
+FIGURE = False
 
 NN = 4  # number of agents
 dd = 2  # dimension of the pos/vel vector (2-dimensional or 3-dimension motion)

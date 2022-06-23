@@ -9,25 +9,30 @@ from rclpy.node import Node
 from std_msgs.msg import Float32MultiArray as msg_float
 
 
-def formation_update(dt, x_i, neigh, data, dist):
-    """
-      dt    = discretization step
-      x_i   = state pf agent i
-      neigh = list of neihbors
-      data  = state of neighbors
-      dist  = coefficient for formation control law 
-    """
-    xdot_i = np.zeros(x_i.shape)
+#def formation_update(dt, x_i, neigh, data, dist):
 
-    for j in neigh:
-        x_j = np.array(data[j].pop(0)[1:])
-        dV_ij = ((x_i - x_j).T@(x_i - x_j) - dist[j]**2)*(x_i - x_j)
-        xdot_i += - dV_ij
+    # xdot_i = np.zeros(x_i.shape)
+    #
+    # for j in neigh:
+    #     x_j = np.array(data[j].pop(0)[1:])
+    #     dV_ij = ((x_i - x_j).T@(x_i - x_j) - dist[j]**2)*(x_i - x_j)
+    #     xdot_i += - dV_ij
 
-    # Forward Euler
+def update_dynamics(dt, x_i, neigh, data, pos, A_kron, agent_id):
+    n_x = x_i.shape
+    xdot_i = np.zeros(n_x)
+    node_i = agent_id
+    index_ii = node_i * n_x + np.arange(n_x)
+
+    for node_j in neigh:
+        x_j = np.array(data[node_j].pop(0)[1:])
+        index_jj = node_j*n_x + np.arange(n_x)
+        xdot_i = A_kron[index_ii, index_jj]
+
     x_i += dt*xdot_i
 
     return x_i
+
 
 def writer(file_name, string):
     """
@@ -44,14 +49,16 @@ class Agent(Node):
                             automatically_declare_parameters_from_overrides=True)
             
         # Get parameters from launcher
-        self.agent_id = self.get_parameter('agent_id').value
-        self.neigh = self.get_parameter('neigh').value
+        self.agent_id = self.get_parameter('agent_id').value # index of the agent
+        self.neigh = self.get_parameter('neigh').value # list  of neighbors
+        A_kron = self.get_parameter('bearing_laplacian').value # bearing laplacian from launcher
+        self.A_kron = np.array(A_kron) # it gives the right shape to the matrix A_kron (d*NN, d*NN)
         
-        dist = self.get_parameter('dist').value
-        self.dist_ii = np.array(dist) # it returns an n_x by 1 array
+        pos_ii = self.get_parameter('pos_xy').value # position vector of the node_i
+        self.pos_ii = np.array(pos_ii) # it returns a dd by 1 array
 
-        x_i = self.get_parameter('x_init').value
-        self.n_x = len(x_i)
+        x_i = self.get_parameter('x_init').value # state vector value of node_i
+        self.n_x = len(x_i) # dimension of the state vector of node_i
         self.x_i = np.array(x_i) # it returns an n_x by 1 array
         
         self.max_iters = self.get_parameter('max_iters').value
@@ -99,9 +106,9 @@ class Agent(Node):
         if self.tt == 0: # Let the publisher start at the first iteration
             msg.data = [float(self.tt)]
 
-            # for element in self.x_i: 
-            #     msg.data.append(float(element))
-            [msg.data.append(float(element)) for element in self.x_i]
+            for element in self.x_i:
+                msg.data.append(float(element))
+            #[msg.data.append(float(element)) for element in self.x_i]
 
             self.publisher_.publish(msg)
             self.tt += 1
@@ -128,7 +135,8 @@ class Agent(Node):
 
             if sync:
                 DeltaT = self.communication_time/10
-                self.x_i = formation_update(DeltaT, self.x_i, self.neigh, self.received_data, self.dist_ii)
+                self.x_i = update_dynamics(DeltaT, self.x_i, self.neigh, self.received_data, self.pos_ii, self.A_kron,
+                                           self.agent_id)
                 
                 # publish the updated message
                 msg.data = [float(self.tt)]
