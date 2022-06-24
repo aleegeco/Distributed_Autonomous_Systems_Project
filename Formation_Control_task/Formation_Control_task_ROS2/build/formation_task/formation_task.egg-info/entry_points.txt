@@ -1,0 +1,3 @@
+[console_scripts]
+agent_i = formation_task.agent_i:main
+

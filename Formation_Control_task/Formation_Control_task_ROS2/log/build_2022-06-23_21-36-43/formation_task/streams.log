@@ -1,0 +1,26 @@
+[0.506s] Invoking command in '/home/alessandro/PycharmProjects/Distributed_Autonomous_Systems_Project/Formation_Control_task/Formation_Control_task_ROS2/build/formation_task': PYTHONPATH=/home/alessandro/PycharmProjects/Distributed_Autonomous_Systems_Project/Formation_Control_task/Formation_Control_task_ROS2/install/formation_task/lib/python3.8/site-packages:${PYTHONPATH} /usr/bin/python3 setup.py develop --prefix /home/alessandro/PycharmProjects/Distributed_Autonomous_Systems_Project/Formation_Control_task/Formation_Control_task_ROS2/install/formation_task --editable --build-directory /home/alessandro/PycharmProjects/Distributed_Autonomous_Systems_Project/Formation_Control_task/Formation_Control_task_ROS2/build/formation_task/build --no-deps install_data --install-dir /home/alessandro/PycharmProjects/Distributed_Autonomous_Systems_Project/Formation_Control_task/Formation_Control_task_ROS2/install/formation_task
+[0.687s] running develop
+[0.797s] running egg_info
+[0.797s] creating formation_task.egg-info
+[0.797s] writing formation_task.egg-info/PKG-INFO
+[0.797s] writing dependency_links to formation_task.egg-info/dependency_links.txt
+[0.798s] writing entry points to formation_task.egg-info/entry_points.txt
+[0.798s] writing requirements to formation_task.egg-info/requires.txt
+[0.798s] writing top-level names to formation_task.egg-info/top_level.txt
+[0.799s] writing manifest file 'formation_task.egg-info/SOURCES.txt'
+[0.823s] reading manifest file 'formation_task.egg-info/SOURCES.txt'
+[0.823s] writing manifest file 'formation_task.egg-info/SOURCES.txt'
+[0.847s] running build_ext
+[0.848s] Creating /home/alessandro/PycharmProjects/Distributed_Autonomous_Systems_Project/Formation_Control_task/Formation_Control_task_ROS2/install/formation_task/lib/python3.8/site-packages/site.py
+[0.849s] Creating /home/alessandro/PycharmProjects/Distributed_Autonomous_Systems_Project/Formation_Control_task/Formation_Control_task_ROS2/install/formation_task/lib/python3.8/site-packages/formation-task.egg-link (link to .)
+[0.850s] Installing agent_i script to /home/alessandro/PycharmProjects/Distributed_Autonomous_Systems_Project/Formation_Control_task/Formation_Control_task_ROS2/install/formation_task/lib/formation_task
+[0.850s] 
+[0.851s] Installed /home/alessandro/PycharmProjects/Distributed_Autonomous_Systems_Project/Formation_Control_task/Formation_Control_task_ROS2/build/formation_task
+[0.851s] running install_data
+[0.851s] creating /home/alessandro/PycharmProjects/Distributed_Autonomous_Systems_Project/Formation_Control_task/Formation_Control_task_ROS2/install/formation_task/share/ament_index
+[0.851s] creating /home/alessandro/PycharmProjects/Distributed_Autonomous_Systems_Project/Formation_Control_task/Formation_Control_task_ROS2/install/formation_task/share/ament_index/resource_index
+[0.851s] creating /home/alessandro/PycharmProjects/Distributed_Autonomous_Systems_Project/Formation_Control_task/Formation_Control_task_ROS2/install/formation_task/share/ament_index/resource_index/packages
+[0.851s] copying resource/formation_task -> /home/alessandro/PycharmProjects/Distributed_Autonomous_Systems_Project/Formation_Control_task/Formation_Control_task_ROS2/install/formation_task/share/ament_index/resource_index/packages
+[0.851s] copying package.xml -> /home/alessandro/PycharmProjects/Distributed_Autonomous_Systems_Project/Formation_Control_task/Formation_Control_task_ROS2/install/formation_task/share/formation_task
+[0.851s] copying launch/formation.launch.py -> /home/alessandro/PycharmProjects/Distributed_Autonomous_Systems_Project/Formation_Control_task/Formation_Control_task_ROS2/install/formation_task/share/formation_task
+[0.883s] Invoked command in '/home/alessandro/PycharmProjects/Distributed_Autonomous_Systems_Project/Formation_Control_task/Formation_Control_task_ROS2/build/formation_task' returned '0': PYTHONPATH=/home/alessandro/PycharmProjects/Distributed_Autonomous_Systems_Project/Formation_Control_task/Formation_Control_task_ROS2/install/formation_task/lib/python3.8/site-packages:${PYTHONPATH} /usr/bin/python3 setup.py develop --prefix /home/alessandro/PycharmProjects/Distributed_Autonomous_Systems_Project/Formation_Control_task/Formation_Control_task_ROS2/install/formation_task --editable --build-directory /home/alessandro/PycharmProjects/Distributed_Autonomous_Systems_Project/Formation_Control_task/Formation_Control_task_ROS2/build/formation_task/build --no-deps install_data --install-dir /home/alessandro/PycharmProjects/Distributed_Autonomous_Systems_Project/Formation_Control_task/Formation_Control_task_ROS2/install/formation_task

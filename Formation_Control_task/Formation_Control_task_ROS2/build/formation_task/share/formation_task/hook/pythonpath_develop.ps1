@@ -1,0 +1,3 @@
+# generated from colcon_powershell/shell/template/hook_prepend_value.ps1.em
+
+colcon_prepend_unique_value PYTHONPATH "$env:COLCON_CURRENT_PREFIX\/home/alessandro/PycharmProjects/Distributed_Autonomous_Systems_Project/Formation_Control_task/Formation_Control_task_ROS2/build/formation_task"
