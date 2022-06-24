@@ -42,9 +42,6 @@ def generate_launch_description():
 
 
     Pg_stack = proj_stack(Node_pos, NN, dd)
-    # Bearing Laplacian Matrix
-    B = bearing_laplacian(Pg_stack, Adj, dd)
-    A_kron = kron_dynamical_matrix(B, NN, n_leaders, k_p, k_v, dd).tolist()
 
     launch_description = [] # Append here your nodes
 
@@ -59,6 +56,7 @@ def generate_launch_description():
         N_ii = np.nonzero(Adj[:, ii])[0].tolist()
         ii_index = ii*n_x + np.arange(n_x)
         x_init_ii = xx_init[ii_index].flatten().tolist()
+        Pg_stack_ii = Pg_stack[ii, :, :, :].flatten().tolist()
 
         launch_description.append(
             Node(
@@ -72,7 +70,9 @@ def generate_launch_description():
                                 'neigh': N_ii, 
                                 'xx_init': x_init_ii,
                                 'pos_xy' : pos_ii,
-                                'kron_matrix': A_kron,
+                                'Pg_stack_ii': Pg_stack_ii,
+                                'k_p': k_p,
+                                'k_v': k_v,
                                 }],
                 output='screen',
                 prefix='xterm -title "agent_{}" -hold -e'.format(ii)
