@@ -1,8 +1,8 @@
 from launch import LaunchDescription
 from launch_ros.actions import Node
+from formation_task.functions import *
 import numpy as np
 import networkx as nx
-from Formation_Control_task.functions import *
 
 def generate_launch_description():
     MAXITERS = 200
@@ -38,7 +38,7 @@ def generate_launch_description():
     Adj = nx.adjacency_matrix(G).toarray()
 
     # definite initial positions
-    xx_init = np.zeros((NN * n_x, 1))
+    xx_init = np.random.rand((NN * n_x)).reshape([NN*n_x, 1])
 
 
     Pg_stack = proj_stack(Node_pos, NN, dd)
@@ -52,7 +52,6 @@ def generate_launch_description():
 
     # cycle which create the quantities needed by the source code file
     for ii in range(NN):
-        pos_ii = Node_pos[ii,:,:].tolist()
         N_ii = np.nonzero(Adj[:, ii])[0].tolist()
         ii_index = ii*n_x + np.arange(n_x)
         x_init_ii = xx_init[ii_index].flatten().tolist()
@@ -69,10 +68,11 @@ def generate_launch_description():
                                 'communication_time': COMM_TIME, 
                                 'neigh': N_ii, 
                                 'xx_init': x_init_ii,
-                                'pos_xy' : pos_ii,
                                 'Pg_stack_ii': Pg_stack_ii,
                                 'k_p': k_p,
                                 'k_v': k_v,
+                                'n_leaders': n_leaders,
+                                'n_agents': NN,
                                 }],
                 output='screen',
                 prefix='xterm -title "agent_{}" -hold -e'.format(ii)

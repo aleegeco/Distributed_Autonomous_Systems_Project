@@ -9,35 +9,33 @@ from rclpy.node import Node
 from std_msgs.msg import Float32MultiArray as msg_float
 
 
-#def formation_update(dt, x_i, neigh, data, dist):
-
-    # xdot_i = np.zeros(x_i.shape)
-    #
-    # for j in neigh:
-    #     x_j = np.array(data[j].pop(0)[1:])
-    #     dV_ij = ((x_i - x_j).T@(x_i - x_j) - dist[j]**2)*(x_i - x_j)
-    #     xdot_i += - dV_ij
 
 ### devo riscriverla e capire bene come farla
-def update_dynamics(dt: int, x_i: np.array, neigh: list, data, pos, Pg_stack_ii: np.array, agent_id, k_p, k_v):
-    n_x = x_i.shape
-    pos_i = x_i[:n_x/2]
-    vel_i = x_i[nx/2:]
-    xdot_i = np.zeros(n_x)
-    node_i = agent_id
-    index_ii = node_i * n_x + np.arange(n_x)
+def update_dynamics(dt: int, x_i: np.array, neigh: list, data, Pg_stack_ii: np.array, agent_id: int,
+                    n_leaders: int, k_p: int, k_v: int):
 
-    if agent_id <= n_leaders:
+    n_x = np.shape(x_i)[0]
+    dd = n_x//2
+    x_i = x_i.reshape([n_x,1])
+    x_dot_i = np.zeros((n_x,1))
+    pos_i = x_i[:dd]
+    vel_i = x_i[dd:]
+    vel_dot_i = np.zeros((dd, 1))
+    if agent_id < n_leaders:
         pass
     else:
         for node_j in neigh:
-            x_j = np.array(data[node_j].pop(0)[1:])
-            pos_j = x_j[:n_x/2]
-            vel_j = x_j[n_x/2:]
-            index_jj = node_j*n_x + np.arange(n_x)
-            veldot_i += - Pg_stack_ii[node_j, :, :]*( k_p*(pos_i - pos_j) + k_v*(vel_i - vel_j))
+            x_j = np.array(data[node_j].pop(0)[1:]).reshape([n_x,1])
+            pos_j = x_j[:dd]
+            vel_j = x_j[dd:]
 
-    x_i += dt*xdot_i
+            pos_dot_i = vel_i
+            vel_dot_i = vel_dot_i - k_p * Pg_stack_ii[node_j, :] @(pos_i - pos_j) \
+                         - k_v * Pg_stack_ii[node_j, :] @(vel_i - vel_j)
+
+            x_dot_i = np.concatenate((pos_dot_i, vel_dot_i))
+
+    x_i = x_i + dt * x_dot_i
 
     return x_i
 
@@ -59,17 +57,19 @@ class Agent(Node):
         # Get parameters from launcher
         self.agent_id = self.get_parameter('agent_id').value # index of the agent
         self.neigh = self.get_parameter('neigh').value # list  of neighbors
-        Pg_stack_ii = self.get_parameter('Pg_stack_ii').value
-        self.Pg_stack_ii = np.array(Pg_stack_ii)
-        self.k_p = self.get_parameter('k_p')
-        self.k_v = self.get_parameter('k_v')
-        
-        pos_ii = self.get_parameter('pos_xy').value # position vector of the node_i
-        self.pos_ii = np.array(pos_ii) # it returns a dd by 1 array
 
-        x_i = self.get_parameter('x_init').value # state vector value of node_i
+        self.k_p = self.get_parameter('k_p').value
+        self.k_v = self.get_parameter('k_v').value
+        self.n_leaders = self.get_parameter('n_leaders').value
+        self.NN = self.get_parameter('n_agents').value
+
+        x_i = self.get_parameter('xx_init').value # state vector value of node_i
         self.n_x = len(x_i) # dimension of the state vector of node_i
         self.x_i = np.array(x_i) # it returns an n_x by 1 array
+
+        Pg_stack_ii = self.get_parameter('Pg_stack_ii').value
+        self.Pg_stack_ii = np.array(Pg_stack_ii).reshape([self.NN,self.n_x//2,self.n_x//2])
+
         
         self.max_iters = self.get_parameter('max_iters').value
         self.communication_time = self.get_parameter('communication_time').value
@@ -145,8 +145,8 @@ class Agent(Node):
 
             if sync:
                 DeltaT = self.communication_time/10
-                self.x_i = update_dynamics(DeltaT, self.x_i, self.neigh, self.received_data, self.pos_ii, self.Pg_stack_ii,
-                                           self.agent_id, self.k_p, self.k_v)
+                self.x_i = update_dynamics(DeltaT, self.x_i, self.neigh, self.received_data, self.Pg_stack_ii,
+                                           self.agent_id, self.n_leaders, self.k_p, self.k_v)
                 
                 # publish the updated message
                 msg.data = [float(self.tt)]
