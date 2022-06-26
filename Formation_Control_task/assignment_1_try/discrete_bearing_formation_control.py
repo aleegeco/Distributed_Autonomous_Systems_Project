@@ -1,7 +1,7 @@
 from Formation_Control_task.Formation_Control_task_ROS2.src.formation_task.formation_task.functions import *
 
 # Plot Settings - to impose usage of LaTeX as text renderer
-FIGURE = False
+FIGURE = True
 
 NN = 4  # number of agents
 dd = 2  # dimension of the pos/vel vector (2-dimensional or 3-dimension motion)

@@ -140,6 +140,7 @@ class Agent(Node):
             # Check if lists are nonempty
             all_received = all(self.received_data[j] for j in self.neigh) # check if all neighbors' have been received
             print("all received", all_received)
+            print("Received_data:{}".format(self.received_data))
 
             sync = False
             # Have all messages at time t-1 arrived?
