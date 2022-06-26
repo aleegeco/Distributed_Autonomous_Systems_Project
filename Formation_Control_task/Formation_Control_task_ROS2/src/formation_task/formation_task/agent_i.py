@@ -38,6 +38,7 @@ def update_dynamics(dt: int, x_i: np.array, neigh: list, data, Pg_stack_ii: np.a
             x_dot_i = np.concatenate((pos_dot_i, vel_dot_i))
 
         x_i = x_i + dt * x_dot_i
+
     return x_i
 
 
@@ -117,9 +118,9 @@ class Agent(Node):
         if self.tt == 0: # Let the publisher start at the first iteration
             msg.data = [float(self.tt)]
 
-            for element in self.x_i:
-                msg.data.append(float(element))
-            #[msg.data.append(float(element)) for element in self.x_i]
+            #for element in self.x_i:
+            #    msg.data.append(float(element))
+            [msg.data.append(float(element)) for element in self.x_i]
 
             self.publisher_.publish(msg)
             self.tt += 1
@@ -138,11 +139,14 @@ class Agent(Node):
         else: 
             # Check if lists are nonempty
             all_received = all(self.received_data[j] for j in self.neigh) # check if all neighbors' have been received
+            print("all received", all_received)
 
             sync = False
             # Have all messages at time t-1 arrived?
             if all_received:
                 sync = all(self.tt-1 == self.received_data[j][0][0] for j in self.neigh) # True if all True
+                print("sync",sync)
+                print("tt", self.tt)
 
             if sync:
                 DeltaT = self.communication_time/10

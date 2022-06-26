@@ -34,7 +34,7 @@ def generate_launch_description():
     ]).T
 
     # definition of the communication graph and its adjacency matrix
-    G = nx.binomial_graph(NN, 0.9)
+    G = nx.binomial_graph(NN, 1)
     Adj = nx.adjacency_matrix(G).toarray()
 
     # definite initial positions
