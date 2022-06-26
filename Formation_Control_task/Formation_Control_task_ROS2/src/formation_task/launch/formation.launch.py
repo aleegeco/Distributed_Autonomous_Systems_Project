@@ -6,7 +6,7 @@ import networkx as nx
 
 def generate_launch_description():
     MAXITERS = 200
-    COMM_TIME = 5e-2 # communication time period
+    COMM_TIME = 10e-3 # communication time period
     NN = 4 # number of agents
     n_leaders = 2 # number of leaders
     dd = 2 # dimension of position vector and velocity vector
@@ -47,9 +47,9 @@ def generate_launch_description():
 
     # Impose leaders initial conditions - they must start still
     for i in range(n_leaders):
-        for j in range(dd):
-            xx_init[(n_leaders * i) + j] = Node_pos[i, j, :]
-
+        index_i = n_x*i + np.arange(n_x) # calculate the index for the entire x_i vector
+        xx_init[index_i[:dd]] = Node_pos[i, :, :] # I use only the first two elements of the list index to impose the positions
+        xx_init[index_i[dd:]] = np.zeros((dd,1)) # I impose v_x and v_y of the leader to be zero
     # cycle which create the quantities needed by the source code file
     for ii in range(NN):
         N_ii = np.nonzero(Adj[:, ii])[0].tolist()
