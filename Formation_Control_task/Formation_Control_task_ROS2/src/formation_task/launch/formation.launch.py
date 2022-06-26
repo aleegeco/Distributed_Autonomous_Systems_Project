@@ -6,7 +6,7 @@ import networkx as nx
 
 def generate_launch_description():
     MAXITERS = 200
-    COMM_TIME = 10e-3 # communication time period
+    COMM_TIME = 5e-2 # communication time period
     NN = 4 # number of agents
     n_leaders = 2 # number of leaders
     dd = 2 # dimension of position vector and velocity vector
