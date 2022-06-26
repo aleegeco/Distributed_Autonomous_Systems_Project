@@ -8,16 +8,19 @@ def bearing_vector(vec_pi: np.array, vec_pj: np.array, d=None):
     # We have to check it
     row_i = np.shape(vec_pi)[0]
     row_j = np.shape(vec_pj)[0]
-    if d:  # if we impose the dimension we'll enter this if, otherwise we'll move to the next statement
-        if row_i == row_j and row_i == d:
-            pass
-        else:
-            print("Vectors dimensions are con consistent")
-    elif row_i == row_j and row_i == 2:  # we want to check if the two vectors have consistent dimension (fixed one)
-        pass
+    if all(vec_pi == vec_pj): # if the vector is the same we have to avoid numerical error in the division
+        g_ij = np.zeros((row_i, 1))
     else:
-        print("WARNING! The dimension of the vector are not consistent. Check them")
-    g_ij = (vec_pj - vec_pi)/np.linalg.norm(vec_pj - vec_pi)  # unit distance vector
+        if d:  # if we impose the dimension we'll enter this if, otherwise we'll move to the next statement
+            if row_i == row_j and row_i == d:
+                g_ij = (vec_pj - vec_pi)/np.linalg.norm(vec_pj - vec_pi)
+            else:
+                print("Vectors dimensions are con consistent")
+        elif row_i == row_j and row_i == 2:  # we want to check if the two vectors have consistent dimension (fixed one)
+            g_ij = (vec_pj - vec_pi)/np.linalg.norm(vec_pj - vec_pi)
+        else:
+            print("WARNING! The dimension of the vector are not consistent. Check them")
+        # unit distance vector
     return g_ij
 
 
