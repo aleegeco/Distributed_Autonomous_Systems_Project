@@ -19,6 +19,11 @@ This GitHub page contains solutions to [Project N°1](https://virtuale.unibo.it/
 | Alessandro Cecconi | [LinkedIn](https://www.linkedin.com/in/alessandro-cecconi-a5a988182/) |  |
 | Marco Bugo | [LinkedIn](https://www.linkedin.com/in/marco-bugo/) | 
 | Roman Sudin | [LinkedIn](https://www.linkedin.com/in/roman-sudin/) |  
+
+## Questions
+
+[Questions](https://github.com/aleegeco/Distributed_Autonomous_Systems_Project/blob/main/QuestionsForTheProfessor.md)
+
 ## License
 
 
