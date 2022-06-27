@@ -30,6 +30,7 @@ def update_dynamics(dt: int, x_i: np.array, neigh: list, data, Pg_stack_ii: np.a
     else:
         for node_j in neigh:
             x_j = np.array(data[node_j].pop(0)[1:])
+
             pos_j = x_j[:dd]
             vel_j = x_j[dd:]
 
