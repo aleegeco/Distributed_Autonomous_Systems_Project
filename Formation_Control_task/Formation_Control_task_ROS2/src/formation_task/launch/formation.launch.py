@@ -34,11 +34,11 @@ def generate_launch_description():
     ]).T
 
     # definition of the communication graph and its adjacency matrix
-    G = nx.binomial_graph(NN, 1)
+    G = nx.binomial_graph(NN, 0.9)
     Adj = nx.adjacency_matrix(G).toarray()
 
     # definite initial positions
-    xx_init = np.random.rand((NN * n_x)).reshape([NN*n_x, 1])
+    xx_init = np.zeros((NN * n_x)).reshape([NN * n_x, 1])
 
 
     Pg_stack = proj_stack(Node_pos, NN, dd)
@@ -47,9 +47,9 @@ def generate_launch_description():
 
     # Impose leaders initial conditions - they must start still
     for i in range(n_leaders):
-        index_i = n_x*i + np.arange(n_x) # calculate the index for the entire x_i vector
-        xx_init[index_i[:dd]] = Node_pos[i, :, :] # I use only the first two elements of the list index to impose the positions
-        xx_init[index_i[dd:]] = np.zeros((dd,1)) # I impose v_x and v_y of the leader to be zero
+        i_index = n_x*i + np.arange(n_x)
+        xx_init[i_index[:dd]] = Node_pos[i,:,:]
+
     # cycle which create the quantities needed by the source code file
     for ii in range(NN):
         N_ii = np.nonzero(Adj[:, ii])[0].tolist()

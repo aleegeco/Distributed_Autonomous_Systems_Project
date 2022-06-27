@@ -15,29 +15,31 @@ def update_dynamics(dt: int, x_i: np.array, neigh: list, data, Pg_stack_ii: np.a
                     n_leaders: int, k_p: int, k_v: int):
 
     n_x = np.shape(x_i)[0]
+    print("shape x_i",x_i.shape)
+    print("data",data)
     dd = n_x//2
 
-    x_i = x_i.reshape([n_x,1])
-    x_dot_i = np.zeros((n_x,1))
+    x_dot_i = np.zeros(n_x)
 
-    pos_i = x_i[:dd]
-    vel_i = x_i[dd:]
-    vel_dot_i = np.zeros((dd, 1))
+    pos_i = x_i[:dd]  # [pos_i_x, pos_i_y].T
+    vel_i = x_i[dd:]  # [vel_i_x, vel_i_y].T
+    vel_dot_i = np.zeros(dd)
 
     if agent_id < n_leaders:
         x_i = x_i
     else:
         for node_j in neigh:
-            x_j = np.array(data[node_j].pop(0)[1:]).reshape([n_x,1])
+            x_j = np.array(data[node_j].pop(0)[1:])
             pos_j = x_j[:dd]
             vel_j = x_j[dd:]
 
             pos_dot_i = vel_i
-            vel_dot_i = vel_dot_i - k_p*Pg_stack_ii[node_j, :]@(pos_i - pos_j) - k_v*Pg_stack_ii[node_j, :]@(vel_i - vel_j)
+            vel_dot_i += - k_p*Pg_stack_ii[node_j, :]@(pos_i - pos_j) - k_v*Pg_stack_ii[node_j, :]@(vel_i - vel_j)
 
-            x_dot_i = np.concatenate((pos_dot_i, vel_dot_i))
+            x_dot_i[:dd] = pos_dot_i
+            x_dot_i[dd:] = vel_dot_i
 
-        x_i = x_i + dt * x_dot_i
+        x_i += dt * x_dot_i
 
     return x_i
 
@@ -139,15 +141,15 @@ class Agent(Node):
         else: 
             # Check if lists are nonempty
             all_received = all(self.received_data[j] for j in self.neigh) # check if all neighbors' have been received
-            print("all received", all_received)
-            print("Received_data:{}".format(self.received_data))
+            #print("all received", all_received)
+            #print("Received_data:{}".format(self.received_data))
 
             sync = False
             # Have all messages at time t-1 arrived?
             if all_received:
                 sync = all(self.tt-1 == self.received_data[j][0][0] for j in self.neigh) # True if all True
-                print("sync",sync)
-                print("tt", self.tt)
+                # print("sync",sync)
+                # print("tt", self.tt)
 
             if sync:
                 DeltaT = self.communication_time/10
