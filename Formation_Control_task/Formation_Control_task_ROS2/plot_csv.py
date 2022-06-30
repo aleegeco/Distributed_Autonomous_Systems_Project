@@ -38,7 +38,7 @@ block_var = False if n_x < 3 else True
 plt.show(block=block_var)
 
 
-if 1 and n_x == 2: # animation 
+if 1 and n_x == 4: # animation
     plt.figure()
     dt = 3 # sub-sampling of the plot horizon
     for tt in range(0,Tmax,dt):

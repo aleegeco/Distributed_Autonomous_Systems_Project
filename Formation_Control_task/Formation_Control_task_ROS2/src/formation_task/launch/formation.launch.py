@@ -3,10 +3,14 @@ from launch_ros.actions import Node
 from formation_task.functions import *
 import numpy as np
 import networkx as nx
+import os
+from ament_index_python.packages import get_package_share_directory
+
+package_name = 'formation_task'
 
 def generate_launch_description():
-    MAXITERS = 200
-    COMM_TIME = 5e-2 # communication time period
+    MAXITERS = 1000
+    COMM_TIME = 10e-2 # communication time period
     NN = 4 # number of agents
     n_leaders = 2 # number of leaders
     dd = 2 # dimension of position vector and velocity vector
@@ -50,6 +54,17 @@ def generate_launch_description():
         i_index = n_x*i + np.arange(n_x)
         xx_init[i_index[:dd]] = Node_pos[i,:,:]
 
+    # RVIZ
+    rviz_config_dir = get_package_share_directory('package_name')
+    rviz_config_file = os.path.join(rviz_config_dir, 'rviz_config.rviz')
+
+    launch_description.append(
+        Node(
+            package='rviz2',
+            node_executable='rviz2',
+            arguments=['-d', rviz_config_file],
+            ))
+
     # cycle which create the quantities needed by the source code file
     for ii in range(NN):
         N_ii = np.nonzero(Adj[:, ii])[0].tolist()
@@ -78,4 +93,11 @@ def generate_launch_description():
                 prefix='xterm -title "agent_{}" -hold -e'.format(ii)
             ))
 
+
+        launch_description.append(
+            Node(
+                package='package_name',
+                node_namescape='agent_{}'.format(ii),
+            )
+        )
     return LaunchDescription(launch_description)

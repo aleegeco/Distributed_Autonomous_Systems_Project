@@ -19,7 +19,7 @@ def update_dynamics(dt: int, x_i: np.array, neigh: list, data, Pg_stack_ii: np.a
 
     x_i = x_i.reshape([n_x,1])
     x_dot_i = np.zeros((n_x,1))
-    print("data={}", data)
+
     pos_i = x_i[:dd]
     vel_i = x_i[dd:]
     vel_dot_i = np.zeros((dd, 1))
