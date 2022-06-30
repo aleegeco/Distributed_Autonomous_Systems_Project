@@ -19,13 +19,15 @@ def update_dynamics(dt: int, x_i: np.array, neigh: list, data, Pg_stack_ii: np.a
 
     x_i = x_i.reshape([n_x,1])
     x_dot_i = np.zeros((n_x,1))
-
+    print("data={}", data)
     pos_i = x_i[:dd]
     vel_i = x_i[dd:]
     vel_dot_i = np.zeros((dd, 1))
 
     if agent_id < n_leaders:
         x_i = x_i
+        for node_j in neigh:
+            x_j = np.array(data[node_j].pop(0)[1:]).reshape([n_x, 1])
     else:
         for node_j in neigh:
             x_j = np.array(data[node_j].pop(0)[1:]).reshape([n_x,1])
@@ -139,15 +141,15 @@ class Agent(Node):
         else: 
             # Check if lists are nonempty
             all_received = all(self.received_data[j] for j in self.neigh) # check if all neighbors' have been received
-            print("all received", all_received)
-            print("Received_data:{}".format(self.received_data))
+            #print("all received", all_received)
+            #print("Received_data:{}".format(self.received_data))
 
             sync = False
             # Have all messages at time t-1 arrived?
             if all_received:
                 sync = all(self.tt-1 == self.received_data[j][0][0] for j in self.neigh) # True if all True
-                print("sync",sync)
-                print("tt", self.tt)
+                #print("sync",sync)
+                #print("tt", self.tt)
 
             if sync:
                 DeltaT = self.communication_time/10
