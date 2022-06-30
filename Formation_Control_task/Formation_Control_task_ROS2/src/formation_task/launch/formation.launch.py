@@ -6,7 +6,6 @@ import networkx as nx
 import os
 from ament_index_python.packages import get_package_share_directory
 
-package_name = 'formation_task'
 
 def generate_launch_description():
     MAXITERS = 1000
@@ -55,9 +54,11 @@ def generate_launch_description():
         xx_init[i_index[:dd]] = Node_pos[i,:,:]
 
     # RVIZ
-    rviz_config_dir = get_package_share_directory('package_name')
+    # initialization rviz variable
+    rviz_config_dir = get_package_share_directory('formation_task')
     rviz_config_file = os.path.join(rviz_config_dir, 'rviz_config.rviz')
 
+    # launch rviz node
     launch_description.append(
         Node(
             package='rviz2',
@@ -65,7 +66,7 @@ def generate_launch_description():
             arguments=['-d', rviz_config_file],
             ))
 
-    # cycle which create the quantities needed by the source code file
+    # cycle which create the quantities needed by the source code file and launch the executables needed for the task
     for ii in range(NN):
         N_ii = np.nonzero(Adj[:, ii])[0].tolist()
         ii_index = ii*n_x + np.arange(n_x)
@@ -75,7 +76,7 @@ def generate_launch_description():
         launch_description.append(
             Node(
                 package='formation_task',
-                node_namespace ='agent_{}'.format(ii),
+                node_namespace='agent_{}'.format(ii),
                 node_executable='agent_i',
                 parameters=[{
                                 'agent_id': ii, 
@@ -93,11 +94,17 @@ def generate_launch_description():
                 prefix='xterm -title "agent_{}" -hold -e'.format(ii)
             ))
 
-
+        # launch VISUALIZER
         launch_description.append(
             Node(
-                package='package_name',
-                node_namescape='agent_{}'.format(ii),
+                package='formation_task',
+                node_namespace='agent_{}'.format(ii),
+                node_executable='visualizer',
+                parameters=[{
+                    'agent_id':ii,
+                    'communication_time':COMM_TIME,
+                }]
             )
         )
+
     return LaunchDescription(launch_description)
