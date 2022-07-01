@@ -65,7 +65,7 @@ def generate_launch_description():
     launch_description.append(
         Node(
             package='rviz2',
-            node_executable='rviz2',
+            executable='rviz2',
             arguments=['-d', rviz_config_file],
             ))
 
@@ -79,8 +79,8 @@ def generate_launch_description():
         launch_description.append(
             Node(
                 package='formation_task',
-                node_namespace='agent_{}'.format(ii),
-                node_executable='agent_i',
+                namespace='agent_{}'.format(ii),
+                executable='agent_i',
                 parameters=[{
                                 'agent_id': ii, 
                                 'max_iters': MAXITERS, 
@@ -102,8 +102,8 @@ def generate_launch_description():
         launch_description.append(
             Node(
                 package='formation_task',
-                node_namespace='agent_{}'.format(ii),
-                node_executable='visualizer',
+                namespace='agent_{}'.format(ii),
+                executable='visualizer',
                 parameters=[{
                     'agent_id':ii,
                     'communication_time':COMM_TIME,

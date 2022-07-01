@@ -10,7 +10,6 @@ from std_msgs.msg import Float32MultiArray as msg_float
 from formation_task.functions import *
 
 
-
 def writer(file_name, string):
     """
       inner function for logging
@@ -52,7 +51,7 @@ class Agent(Node):
 
         # create logging file
         self.file_name = "_csv_file/agent_{}.csv".format(self.agent_id)
-        self.file_name_pos = "_csv_file/agent_ref_pos{}.csv".format(self.agent_id)
+        self.file_name_pos = "_csv_file_pos/agent_ref_pos{}.csv".format(self.agent_id)
         file = open(self.file_name, "w+") # 'w+' needs to create file and open in writing mode if doesn't exist
         file_pos = open(self.file_name_pos, "w+")
         file.close()
@@ -110,8 +109,10 @@ class Agent(Node):
             writer(self.file_name, data_for_csv + '\n')
 
             # # 3) csv file for nodes reference positions
-            # data_pos_csv = self.node_ref_pos[self.agent_id,:,:].tolist().copy()
-            # writer(self.file_name_pos, data_pos_csv)
+            data_pos_csv = self.node_ref_pos[self.agent_id,:,:].tolist().copy()
+            data_pos_csv = [str(element) for element in data_pos_csv]
+            data_pos_csv = ','.join(data_pos_csv)
+            writer(self.file_name_pos, data_pos_csv + '\n')
 
         else: 
             # Check if lists are nonempty

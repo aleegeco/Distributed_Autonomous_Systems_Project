@@ -9,7 +9,7 @@ signal.signal(signal.SIGINT, signal.SIG_DFL)
 _, _, files = next(os.walk("./_csv_file"))
 NN = len(files)
 
-animation = True
+animation = False
 xx_csv = {}
 Tlist = []
 
@@ -17,6 +17,12 @@ for ii in range(NN):
     xx_csv[ii] = np.genfromtxt("_csv_file/agent_{}.csv".format(ii), delimiter=',').T
     Tlist.append(xx_csv[ii].shape[1])
 
+_,_,files1 = next(os.walk("./_csv_file_pos"))
+xx_ref_pos = {}
+for ii in range(NN):
+    xx_ref_pos[ii] = np.genfromtxt("_csv_file_pos/agent_ref_pos{}.csv".format(ii), delimiter=',')
+
+print(xx_ref_pos)
 n_x = xx_csv[ii].shape[0]
 dd = n_x//2
 
@@ -29,7 +35,6 @@ xx_vel = np.zeros((NN*dd, T_max))
 # Store differently positions and velocities
 for ii in range(NN):
     index_ii = ii*dd + np.arange(dd)
-    print(index_ii)
     xx_pos[index_ii,:] = xx_csv[ii][:dd][:T_max] # useful to remove last samples
     xx_vel[index_ii,:] = xx_csv[ii][dd:][:T_max]
 
