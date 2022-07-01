@@ -8,16 +8,17 @@ from ament_index_python.packages import get_package_share_directory
 
 
 def generate_launch_description():
-    MAXITERS = 1000
+    MAXITERS = 1500
     COMM_TIME = 10e-2 # communication time period
     NN = 4 # number of agents
     n_leaders = 2 # number of leaders - first two in the vector
     dd = 2 # dimension of position vector and velocity vector
     n_x = 2*dd # dimension of the single vector x_i
 
-    k_p = 0.7 # position gain
+    k_p = 1.5 # position gain
     k_v = 1.5 # velocity gain
-    k_i = 0.4 # integral gain
+    k_i = 0.01 # integral gain
+
 
     velocity_leader = 0
 
@@ -92,6 +93,7 @@ def generate_launch_description():
                                 'Pg_stack_ii': Pg_stack_ii,
                                 'k_p': k_p,
                                 'k_v': k_v,
+                                'k_i': k_i,
                                 'n_leaders': n_leaders,
                                 'n_agents': NN,
                                 'node_pos': Node_pos,

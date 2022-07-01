@@ -121,47 +121,45 @@ def formation(xx: np.array, horizon: int, Adj: np.array, NN: int, n_x: int, anim
         plt.clf()
 
 # function used in ROS2 to define the dynamics of each agent
-def update_dynamics(dt: int, x_i: np.array, neigh: list, data, Pg_stack_ii: np.array, agent_id: int,
-                    n_leaders: int, k_p: int, k_v: int, integral_action=False, leader_velocity=0):
-
-    n_x = np.shape(x_i)[0]
+def update_dynamics(dt: int, self, integral_action=False, leader_velocity=0):
+    n_x = np.shape(self.x_i)[0]
     dd = n_x//2
 
-    x_i = x_i.reshape([n_x,1])
-    x_dot_i = np.zeros((n_x,1))
+    x_i = self.x_i
+    x_dot_i = np.zeros(n_x)
 
     pos_i = x_i[:dd]
     vel_i = x_i[dd:]
-    vel_dot_i = np.zeros((dd, 1))
+    vel_dot_i = np.zeros(dd)
 
-    if agent_id < n_leaders:
+    if self.agent_id < self.n_leaders:
         if leader_velocity != 0:
-            pos_dot_i = np.ones((dd,1))*leader_velocity
+            pos_dot_i = np.ones(dd)*leader_velocity
             x_dot_i = np.concatenate((pos_dot_i, vel_dot_i))
             x_i = x_i + dt*x_dot_i
         else:
             x_i = x_i
 
         # for cycle to empty the buffer even if we're considering leaders, otherwise the algorithm will not converge
-        for node_j in neigh:
-            _ = np.array(data[node_j].pop(0)[1:]).reshape([n_x, 1])
+        for node_j in self.neigh:
+            _ = np.array(self.received_data[node_j].pop(0)[1:])
     else:
-        for node_j in neigh:
-            x_j = np.array(data[node_j].pop(0)[1:]).reshape([n_x,1])
+        for node_j in self.neigh:
+            x_j = np.array(self.received_data[node_j].pop(0)[1:])
             pos_j = x_j[:dd]
             vel_j = x_j[dd:]
-
+            self.error_pos[self.agent_id, node_j, :] += (pos_i - pos_j)*dt
             if integral_action:
                 pos_dot_i = vel_i
-                vel_dot_i = vel_dot_i - k_p*Pg_stack_ii[node_j, :]@(pos_i - pos_j) \
-                            - k_v*Pg_stack_ii[node_j, :]@(vel_i - vel_j)
+                vel_dot_i += - self.Pg_stack_ii[node_j, :]@(self.k_p*(pos_i - pos_j) \
+                            + self.k_v*(vel_i - vel_j) + self.k_i*self.error_pos[self.agent_id, node_j, :])
             else:
                 pos_dot_i = vel_i
-                vel_dot_i = vel_dot_i - k_p * Pg_stack_ii[node_j, :] @ (pos_i - pos_j) \
-                            - k_v * Pg_stack_ii[node_j, :] @ (vel_i - vel_j)
+                vel_dot_i += - self.k_p * self.Pg_stack_ii[node_j, :] @ (pos_i - pos_j) \
+                             - self.k_v * self.Pg_stack_ii[node_j, :] @ (vel_i - vel_j)
 
             x_dot_i = np.concatenate((pos_dot_i, vel_dot_i))
 
-        x_i = x_i + dt * x_dot_i
+        x_i += dt * x_dot_i
 
     return x_i

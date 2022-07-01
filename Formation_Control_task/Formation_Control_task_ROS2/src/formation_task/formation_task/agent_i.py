@@ -30,6 +30,8 @@ class Agent(Node):
 
         self.k_p = self.get_parameter('k_p').value
         self.k_v = self.get_parameter('k_v').value
+        self.k_i = self.get_parameter('k_i').value
+
         self.n_leaders = self.get_parameter('n_leaders').value
         self.NN = self.get_parameter('n_agents').value
         self.leader_velocity = self.get_parameter('leader_velocity').value
@@ -43,8 +45,8 @@ class Agent(Node):
         self.node_ref_pos = np.array(node_ref_pos).reshape([self.NN, dd, 1])
         Pg_stack_ii = self.get_parameter('Pg_stack_ii').value
         self.Pg_stack_ii = np.array(Pg_stack_ii).reshape([self.NN, dd, dd])
+        self.error_pos = np.zeros((self.NN, self.NN, dd))
 
-        
         self.max_iters = self.get_parameter('max_iters').value
         self.communication_time = self.get_parameter('communication_time').value
 
@@ -126,8 +128,7 @@ class Agent(Node):
 
             if sync:
                 DeltaT = self.communication_time/10
-                self.x_i = update_dynamics(DeltaT, self.x_i, self.neigh, self.received_data, self.Pg_stack_ii,
-                                           self.agent_id, self.n_leaders, self.k_p, self.k_v, leader_velocity=self.leader_velocity)
+                self.x_i = update_dynamics(DeltaT, self, integral_action=True, leader_velocity=self.leader_velocity)
                 
                 # publish the updated message
                 msg.data = [float(self.tt)]
