@@ -14,18 +14,16 @@ class Visualizer(Node):
         # Get parameters from launcher
         self.agent_id = self.get_parameter('agent_id').value
         self.communication_time = self.get_parameter('communication_time').value
+        self.n_leaders = self.get_parameter('n_leaders').value # added parameter to know which node is a leader
 
 
-        #######################################################################################
-        # Let's subscribe to the topic we want to visualize
-        
+        # Subscription to visualize the topic related to the agent
         self.subscription = self.create_subscription(
                                                      msg_float, 
                                                      '/topic_{}'.format(self.agent_id),
                                                      self.listener_callback, 
                                                      10)
 
-        #######################################################################################
 
         # Create the publisher that will communicate with Rviz
         self.timer = self.create_timer(self.communication_time, self.publish_data)
@@ -47,7 +45,6 @@ class Visualizer(Node):
     def publish_data(self):
         if self.current_pose.position is not None:
             # Set the type of message to send to Rviz -> Marker
-            # (see http://docs.ros.org/en/noetic/api/visualization_msgs/html/index-msg.html)
             marker = Marker()
 
             # Select the name of the reference frame, without it markers will be not visualized
@@ -62,7 +59,7 @@ class Visualizer(Node):
             marker.pose.position.y = self.current_pose.position.y
             marker.pose.position.z = self.current_pose.position.z 
 
-            # Select the marker action (ADD, DELATE)
+            # Select the marker action (ADD, DELETE)
             marker.action = Marker.ADD
 
             # Select the namespace of the marker
@@ -79,7 +76,7 @@ class Visualizer(Node):
 
             # Specify the color of the marker as RGBA
             color = [1.0, 0.0, 0.0, 1.0]
-            if self.agent_id % 2:
+            if self.agent_id < self.n_leaders:
                 color = [0.0, 0.5, 0.5, 1.0]
 
             marker.color.r = color[0]

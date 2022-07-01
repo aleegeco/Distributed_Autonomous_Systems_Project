@@ -103,6 +103,7 @@ def generate_launch_description():
                 parameters=[{
                     'agent_id':ii,
                     'communication_time':COMM_TIME,
+                    'n_leaders':n_leaders,
                 }]
             )
         )
