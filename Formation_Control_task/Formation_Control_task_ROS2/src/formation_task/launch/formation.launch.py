@@ -69,13 +69,13 @@ def generate_launch_description():
             arguments=['-d', rviz_config_file],
             ))
 
+    Node_pos = Node_pos.flatten().tolist()
     # cycle which create the quantities needed by the source code file and launch the executables needed for the task
     for ii in range(NN):
         N_ii = np.nonzero(Adj[:, ii])[0].tolist()
         ii_index = ii*n_x + np.arange(n_x)
         x_init_ii = xx_init[ii_index].flatten().tolist()
         Pg_stack_ii = Pg_stack[ii, :, :, :].flatten().tolist()
-
         launch_description.append(
             Node(
                 package='formation_task',
@@ -92,6 +92,7 @@ def generate_launch_description():
                                 'k_v': k_v,
                                 'n_leaders': n_leaders,
                                 'n_agents': NN,
+                                'node_pos': Node_pos,
                                 }],
                 output='screen',
                 prefix='xterm -title "agent_{}" -hold -e'.format(ii)

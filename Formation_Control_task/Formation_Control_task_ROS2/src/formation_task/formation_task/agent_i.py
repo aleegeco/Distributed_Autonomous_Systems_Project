@@ -37,9 +37,12 @@ class Agent(Node):
         x_i = self.get_parameter('xx_init').value # state vector value of node_i
         self.n_x = len(x_i) # dimension of the state vector of node_i
         self.x_i = np.array(x_i) # it returns an n_x by 1 array
+        dd = self.n_x//2
 
+        node_ref_pos = self.get_parameter('node_pos').value
+        self.node_ref_pos = np.array(node_ref_pos).reshape([self.NN, dd, 1])
         Pg_stack_ii = self.get_parameter('Pg_stack_ii').value
-        self.Pg_stack_ii = np.array(Pg_stack_ii).reshape([self.NN,self.n_x//2,self.n_x//2])
+        self.Pg_stack_ii = np.array(Pg_stack_ii).reshape([self.NN, dd, dd])
 
         
         self.max_iters = self.get_parameter('max_iters').value
@@ -49,8 +52,11 @@ class Agent(Node):
 
         # create logging file
         self.file_name = "_csv_file/agent_{}.csv".format(self.agent_id)
+        self.file_name_pos = "_csv_file/agent_ref_pos{}.csv".format(self.agent_id)
         file = open(self.file_name, "w+") # 'w+' needs to create file and open in writing mode if doesn't exist
+        file_pos = open(self.file_name_pos, "w+")
         file.close()
+        file_pos.close()
 
         # initialize subscription dict
         self.subscriptions_list = {}
@@ -87,8 +93,6 @@ class Agent(Node):
         if self.tt == 0: # Let the publisher start at the first iteration
             msg.data = [float(self.tt)]
 
-            #for element in self.x_i:
-            #    msg.data.append(float(element))
             [msg.data.append(float(element)) for element in self.x_i]
 
             self.publisher_.publish(msg)
@@ -103,20 +107,20 @@ class Agent(Node):
             data_for_csv = msg.data.tolist().copy()
             data_for_csv = [str(round(element,4)) for element in data_for_csv[1:]]
             data_for_csv = ','.join(data_for_csv)
-            writer(self.file_name,data_for_csv+'\n')
+            writer(self.file_name, data_for_csv + '\n')
+
+            # # 3) csv file for nodes reference positions
+            # data_pos_csv = self.node_ref_pos[self.agent_id,:,:].tolist().copy()
+            # writer(self.file_name_pos, data_pos_csv)
 
         else: 
             # Check if lists are nonempty
             all_received = all(self.received_data[j] for j in self.neigh) # check if all neighbors' have been received
-            #print("all received", all_received)
-            #print("Received_data:{}".format(self.received_data))
 
             sync = False
             # Have all messages at time t-1 arrived?
             if all_received:
                 sync = all(self.tt-1 == self.received_data[j][0][0] for j in self.neigh) # True if all True
-                #print("sync",sync)
-                #print("tt", self.tt)
 
             if sync:
                 DeltaT = self.communication_time/10
