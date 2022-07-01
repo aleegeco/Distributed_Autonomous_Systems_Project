@@ -112,7 +112,7 @@ class Agent(Node):
             # # 3) csv file for nodes reference positions
             data_pos_csv = self.node_ref_pos[self.agent_id,:,:].tolist().copy()
             data_pos_csv = [str(element) for element in data_pos_csv]
-            data_pos_csv = ','.join(data_pos_csv)
+            data_pos_csv = ','.join(data_pos_csv).replace('[',' ').replace(']'," ").strip(" ")
             writer(self.file_name_pos, data_pos_csv + '\n')
 
         else: 
