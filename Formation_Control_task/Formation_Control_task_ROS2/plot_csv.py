@@ -9,7 +9,7 @@ signal.signal(signal.SIGINT, signal.SIG_DFL)
 _, _, files = next(os.walk("./_csv_file"))
 NN = len(files)
 
-animation = False
+animation = True
 xx_csv = {}
 Tlist = []
 
@@ -17,12 +17,12 @@ for ii in range(NN):
     xx_csv[ii] = np.genfromtxt("_csv_file/agent_{}.csv".format(ii), delimiter=',').T
     Tlist.append(xx_csv[ii].shape[1])
 
-_,_,files1 = next(os.walk("./_csv_file_pos"))
-xx_ref_pos = {}
-for ii in range(NN):
-    xx_ref_pos[ii] = np.genfromtxt("_csv_file_pos/agent_ref_pos{}.csv".format(ii), delimiter=',')
+# _,_,files1 = next(os.walk("./_csv_file_pos"))
+# xx_ref_pos = {}
+# for ii in range(NN):
+#     xx_ref_pos[ii] = np.genfromtxt("_csv_file_pos/agent_ref_pos{}.csv".format(ii), delimiter=',')
 
-print(xx_ref_pos)
+# print(xx_ref_pos)
 n_x = xx_csv[ii].shape[0]
 dd = n_x//2
 
@@ -74,13 +74,6 @@ for node in range(NN):
     plt.plot(range(T_max), xx_vel[node*2 + 1, :])
     legend.append("i: {}".format(node))
 plt.legend(legend); plt.grid()
-
-# plot of evolution of position error in x over time for each node
-# # followers with respect to leaders
-# plt.figure()
-# plt.title("Position Error $e_{i_{p,x}}")
-# for node in range(NN):
-#     plt.plot(range(Tmax), xx_pos[node*2,:] - xx_pos[node*2 +])
 
 block_var = False if n_x < 3 else True
 plt.show(block=block_var)

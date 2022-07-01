@@ -1,19 +1,13 @@
-#
-# 11/05/2022
-# IN-LP
-#
+
 from time import sleep
 import numpy as np
 import rclpy
 from rclpy.node import Node
 from std_msgs.msg import Float32MultiArray as msg_float
-from formation_task.functions import *
+from formation_task_letters.functions_letters import *
 
 
 def writer(file_name, string):
-    """
-      inner function for logging
-    """
     file = open(file_name, "a") # "a" stands for "append"
     file.write(string)
     file.close()
@@ -32,31 +26,28 @@ class Agent(Node):
         self.k_v = self.get_parameter('k_v').value
         self.n_leaders = self.get_parameter('n_leaders').value
         self.NN = self.get_parameter('n_agents').value
-        self.leader_velocity = self.get_parameter('leader_velocity').value
 
         x_i = self.get_parameter('xx_init').value # state vector value of node_i
         self.n_x = len(x_i) # dimension of the state vector of node_i
         self.x_i = np.array(x_i) # it returns an n_x by 1 array
         dd = self.n_x//2
 
-        node_ref_pos = self.get_parameter('node_pos').value
-        self.node_ref_pos = np.array(node_ref_pos).reshape([self.NN, dd, 1])
-        Pg_stack_ii = self.get_parameter('Pg_stack_ii').value
-        self.Pg_stack_ii = np.array(Pg_stack_ii).reshape([self.NN, dd, dd])
+        formation = self.get_parameter('formation').value
+        self.formation = np.array(formation).reshape(3,self.NN,dd)
 
-        
         self.max_iters = self.get_parameter('max_iters').value
         self.communication_time = self.get_parameter('communication_time').value
 
         self.tt = 0
+        self.start = 0
 
         # create logging file
         self.file_name = "_csv_file/agent_{}.csv".format(self.agent_id)
-        self.file_name_pos = "_csv_file_pos/agent_ref_pos{}.csv".format(self.agent_id)
+        # self.file_name_pos = "_csv_file_pos/agent_ref_pos{}.csv".format(self.agent_id)
         file = open(self.file_name, "w+") # 'w+' needs to create file and open in writing mode if doesn't exist
-        file_pos = open(self.file_name_pos, "w+")
+        # file_pos = open(self.file_name_pos, "w+")
         file.close()
-        file_pos.close()
+        # file_pos.close()
 
         # initialize subscription dict
         self.subscriptions_list = {}
@@ -94,7 +85,7 @@ class Agent(Node):
             msg.data = [float(self.tt)]
 
             [msg.data.append(float(element)) for element in self.x_i]
-
+            msg.data.append(self.start)
             self.publisher_.publish(msg)
             self.tt += 1
 
@@ -110,10 +101,10 @@ class Agent(Node):
             writer(self.file_name, data_for_csv + '\n')
 
             # # 3) csv file for nodes reference positions
-            data_pos_csv = self.node_ref_pos[self.agent_id,:,:].tolist().copy()
-            data_pos_csv = [str(element) for element in data_pos_csv]
-            data_pos_csv = ','.join(data_pos_csv)
-            writer(self.file_name_pos, data_pos_csv + '\n')
+            # data_pos_csv = self.node_ref_pos[self.agent_id,:,:].tolist().copy() #TODO aggiornare csv per nuova formation
+            # data_pos_csv = [str(element) for element in data_pos_csv]
+            # data_pos_csv = ','.join(data_pos_csv)
+            # writer(self.file_name_pos, data_pos_csv + '\n')
 
         else: 
             # Check if lists are nonempty
@@ -126,12 +117,13 @@ class Agent(Node):
 
             if sync:
                 DeltaT = self.communication_time/10
-                self.x_i = update_dynamics(DeltaT, self.x_i, self.neigh, self.received_data, self.Pg_stack_ii,
-                                           self.agent_id, self.n_leaders, self.k_p, self.k_v, leader_velocity=self.leader_velocity)
+                self.x_i, self.start = update_dynamics(DeltaT, self.x_i, self.neigh, self.received_data, self.formation,
+                                           self.agent_id, self.n_leaders, self.k_p, self.k_v)
                 
                 # publish the updated message
                 msg.data = [float(self.tt)]
                 [msg.data.append(float(element)) for element in self.x_i]
+                msg.data.append(self.start)
                 self.publisher_.publish(msg)
 
                 # save data on csv file

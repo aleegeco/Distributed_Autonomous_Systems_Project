@@ -121,11 +121,14 @@ def formation(xx: np.array, horizon: int, Adj: np.array, NN: int, n_x: int, anim
         plt.clf()
 
 # function used in ROS2 to define the dynamics of each agent
-def update_dynamics(dt: int, x_i: np.array, neigh: list, data, Pg_stack_ii: np.array, agent_id: int,
-                    n_leaders: int, k_p: int, k_v: int, integral_action=False, leader_velocity=0):
+def update_dynamics(dt: int, x_i: np.array, neigh: list, data, formation: np.array, agent_id: int,
+                    n_leaders: int, k_p: int, k_v: int,integral_action=False):
 
     n_x = np.shape(x_i)[0]
     dd = n_x//2
+    epsilon = 1e-2
+    start = 0
+
 
     x_i = x_i.reshape([n_x,1])
     x_dot_i = np.zeros((n_x,1))
@@ -134,34 +137,40 @@ def update_dynamics(dt: int, x_i: np.array, neigh: list, data, Pg_stack_ii: np.a
     vel_i = x_i[dd:]
     vel_dot_i = np.zeros((dd, 1))
 
+    error_pos = np.abs(pos_i - formation[0,agent_id,:].reshape((dd,1)))
+
     if agent_id < n_leaders:
-        if leader_velocity != 0:
-            pos_dot_i = np.ones((dd,1))*leader_velocity
-            x_dot_i = np.concatenate((pos_dot_i, vel_dot_i))
-            x_i = x_i + dt*x_dot_i
-        else:
-            x_i = x_i
+        pos_dot_i = k_p*error_pos
+
+        x_dot_i = np.concatenate((pos_dot_i, vel_dot_i))
+
+        x_i = x_i + dt*x_dot_i
+
+        if np.linalg.norm(error_pos) < epsilon:
+            start = 1
 
         # for cycle to empty the buffer even if we're considering leaders, otherwise the algorithm will not converge
         for node_j in neigh:
-            _ = np.array(data[node_j].pop(0)[1:]).reshape([n_x, 1])
+            _ = np.array(data[node_j].pop(0)[1:-1]).reshape([n_x, 1])
     else:
+        # for node_j in neigh:
+        #     x_j = np.array(data[node_j].pop(0)[1:]).reshape([n_x,1])
+        #     pos_j = x_j[:dd]
+        #     vel_j = x_j[dd:]
+        #
+        #     if integral_action:
+        #         pos_dot_i = vel_i
+        #         vel_dot_i = vel_dot_i - k_p*Pg_stack_ii[node_j, :]@(pos_i - pos_j) \
+        #                     - k_v*Pg_stack_ii[node_j, :]@(vel_i - vel_j)
+        #     else:
+        #         pos_dot_i = vel_i
+        #         vel_dot_i = vel_dot_i - k_p * Pg_stack_ii[node_j, :] @ (pos_i - pos_j) \
+        #                     - k_v * Pg_stack_ii[node_j, :] @ (vel_i - vel_j)
+        #
+        #     x_dot_i = np.concatenate((pos_dot_i, vel_dot_i))
         for node_j in neigh:
-            x_j = np.array(data[node_j].pop(0)[1:]).reshape([n_x,1])
-            pos_j = x_j[:dd]
-            vel_j = x_j[dd:]
-
-            if integral_action:
-                pos_dot_i = vel_i
-                vel_dot_i = vel_dot_i - k_p*Pg_stack_ii[node_j, :]@(pos_i - pos_j) \
-                            - k_v*Pg_stack_ii[node_j, :]@(vel_i - vel_j)
-            else:
-                pos_dot_i = vel_i
-                vel_dot_i = vel_dot_i - k_p * Pg_stack_ii[node_j, :] @ (pos_i - pos_j) \
-                            - k_v * Pg_stack_ii[node_j, :] @ (vel_i - vel_j)
-
-            x_dot_i = np.concatenate((pos_dot_i, vel_dot_i))
-
+            _ = np.array(data[node_j].pop(0)[1:-1]).reshape([n_x, 1])
+        x_dot_i = 0
         x_i = x_i + dt * x_dot_i
 
-    return x_i
+    return x_i, start
