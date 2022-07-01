@@ -11,15 +11,18 @@ def generate_launch_description():
     MAXITERS = 1000
     COMM_TIME = 10e-2 # communication time period
     NN = 4 # number of agents
-    n_leaders = 2 # number of leaders
+    n_leaders = 2 # number of leaders - first two in the vector
     dd = 2 # dimension of position vector and velocity vector
     n_x = 2*dd # dimension of the single vector x_i
 
     k_p = 0.7 # position gain
     k_v = 1.5 # velocity gain
+    k_i = 0.4 # integral gain
 
+    # initialization of the tensor for node reference final positions
     Node_pos = np.zeros((NN, dd, 1))
 
+    # set the position for each agent
     Node_pos[0, :, :] = np.array([
         [1, 5]
     ]).T
@@ -43,7 +46,7 @@ def generate_launch_description():
     # definite initial positions
     xx_init = np.zeros((NN * n_x)).reshape([NN * n_x, 1])
 
-
+    # tensor which stores all the projection matrix for each pair of nodes (i,j)
     Pg_stack = proj_stack(Node_pos, NN, dd)
 
     launch_description = [] # Append here your nodes
@@ -54,7 +57,7 @@ def generate_launch_description():
         xx_init[i_index[:dd]] = Node_pos[i,:,:]
 
     # RVIZ
-    # initialization rviz variable
+    # initialization of rviz variables
     rviz_config_dir = get_package_share_directory('formation_task')
     rviz_config_file = os.path.join(rviz_config_dir, 'rviz_config.rviz')
 
