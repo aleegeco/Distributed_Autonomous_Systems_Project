@@ -112,12 +112,15 @@ if animation: # animation
         for ii in range(NN):
             index_ii =  ii*dd + np.arange(dd)
             xx_ii = xx_tt[index_ii]
+            xx_ref_pos_ii = xx_ref_pos[index_ii]
             plt.plot(xx_ii[0],xx_ii[1], marker='o', markersize=15, fillstyle='none', color = 'tab:red')
+            plt.plot(xx_ref_pos_ii[0], xx_ref_pos_ii[1], marker='x', markersize=15, color='tab:blue')
 
 
         axes_lim = (np.min(xx_pos)-1,np.max(xx_pos)+1)
         plt.xlim(axes_lim); plt.ylim(axes_lim)
         plt.plot(xx_pos[0:dd*NN:dd,:].T,xx_pos[1:dd*NN:dd,:].T)
+        plt.grid()
 
         plt.axis('equal')
 

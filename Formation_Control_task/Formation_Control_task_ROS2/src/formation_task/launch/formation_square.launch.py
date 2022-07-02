@@ -10,38 +10,35 @@ from ament_index_python.packages import get_package_share_directory
 def generate_launch_description():
     MAXITERS = 1500
     COMM_TIME = 10e-2 # communication time period
-    NN = 4 # number of agents
-    n_leaders = 2 # number of leaders - first two in the vector
     dd = 2 # dimension of position vector and velocity vector
     n_x = 2*dd # dimension of the single vector x_i
 
-    k_p = 1 # position gain
+    k_p = 0.7 # position gain
     k_v = 1.5 # velocity gain
     k_i = 0.01 # integral gain
 
     # variable which sets the leaders CONSTANT velocity
-    acceleration_leader = 0.1
-    integral_action = True
+    acceleration_leader = 0
+    integral_action = False
 
-    # initialization of the tensor for node reference final positions
+    # dictionary with all the formations we want to try
+    formations = {'square': [[1, 5], [5, 5], [1, 1], [5, 1]],
+                  'exagon': [[5.75, 5.30], [4.25, 5.30], [6.5, 4.0], [3.50, 4.0], [5.75, 2.70], [4.25, 2.70]],
+                  'octagon': [[8, 4], [8, 12], [12, 8], [4, 8], [5.172, 5.172], [10.83, 10.83], [10.83, 5.172], [5.172, 10.83]],
+                  'A': [[1, 1], [9, 1], [5, 9], [5, 5], [2, 3], [3, 5], [4, 7], [6, 7], [7, 5], [8, 3]],
+                  'B': [[1, 1], [1, 9], [6, 7], [6, 3], [1, 5], [1, 3], [1, 7], [4, 9], [4, 5], [4, 1]],
+                  'C': [[7, 1], [7, 9], [6, 1], [6, 9], [5, 2], [5, 8], [4, 3], [4, 7], [4, 4], [4, 6]],
+                  'group': [[5, 9], [2, 8], [8, 8], [4, 6], [6, 6], [4, 4], [6, 4], [2, 2], [8, 2], [5, 1]]}
+
+
+    temp_array = np.array(formations['exagon'])
+    NN = len(temp_array) # number of agents
+    n_leaders = NN//2 - 1 # number of leaders - firsts positions in the vector
+
     Node_pos = np.zeros((NN, dd, 1))
-
-    # set the position for each agent
-    Node_pos[0, :, :] = np.array([
-        [1, 5]
-    ]).T
-    # Node 1 (px py).T
-    Node_pos[1, :, :] = np.array([
-        [5, 5]
-    ]).T
-    # Node 2 (px py).T
-    Node_pos[2, :, :] = np.array([
-        [1, 1]
-    ]).T
-    # Node 3 (px py).T
-    Node_pos[3, :, :] = np.array([
-        [5, 1]
-    ]).T
+    # set the reference position for each agent
+    for node in range(NN):
+        Node_pos[node, :, :] = temp_array[node, :].reshape((dd, 1))
 
     # definition of the communication graph and its adjacency matrix
     G = nx.binomial_graph(NN, 0.9)
