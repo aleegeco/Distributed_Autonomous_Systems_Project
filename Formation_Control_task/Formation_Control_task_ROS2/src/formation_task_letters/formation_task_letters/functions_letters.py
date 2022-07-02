@@ -43,8 +43,8 @@ def proj_stack(pos_nodes: np.array, NN: int, d: int):
     Pg_stack = np.zeros((NN, NN, d, d))  # tensor of dimension (NN, NN, d,d)
     for node_i in range(NN):
         for node_j in range(NN):
-            pos_j = pos_nodes[node_j, :, :]
-            pos_i = pos_nodes[node_i, :, :]
+            pos_j = pos_nodes[node_j, :]
+            pos_i = pos_nodes[node_i, :]
             Pg_ij = proj_matrix(pos_i, pos_j)
             Pg_stack[node_i, node_j, :, :] = Pg_ij
     return Pg_stack
@@ -52,20 +52,21 @@ def proj_stack(pos_nodes: np.array, NN: int, d: int):
 
 def bearing_laplacian(Pg_stack: np.array, Adj: np.array, d: int):
     # function which computes the bearing laplacian
-    # it computes the matrix A_kron(G(p))
+    # it computes the matrix B(G(p*))
     n_agents = np.shape(Adj)[0]  # int representing number of agents
-    B_temp = np.zeros((n_agents, n_agents, d, d))  # tensor of 4 dimension to build matrix A_kron
+    B_temp = np.zeros((n_agents, n_agents, d, d))  # tensor of 4 dimension to build matrix easily
     for node_i in range(n_agents):
         list_neigh_i = np.nonzero(Adj[node_i])[0]  # neighbors of node i
         for node_j in range(n_agents):
             if node_j in list_neigh_i:  # if the node j is a neighbor
                 if node_j != node_i:  # if the nodes are not the sa,e
                     B_temp[node_i, node_j, :, :] = - Pg_stack[node_i, node_j, :, :]
-            elif node_i == node_j:  # if the node are the same (block diagonal of matrix A_kron)
+            elif node_i == node_j:  # if the node are the same (block diagonal of B(G(p)))
                 for node_k in list_neigh_i:
                     B_temp[node_i, node_j, :, :] += Pg_stack[node_i, node_k, :, :]  # summation of the matrices Pg_ik
     B = np.zeros((d * n_agents, d * n_agents))
-    # another cycle to build the matrix A_kron with the right dimensions
+    # another cycle to build the matrix B(Gp*) with the right dimensions
+    # it explodes the tensor in a matrix of dimension N*d x N*d
     for i in range(n_agents):
         for j in range(n_agents):
             for k in range(d):
@@ -94,83 +95,51 @@ def kron_dynamical_matrix(B: np.array, NN: int, n_leaders: int, k_p: int, k_v: i
     A_kron = np.concatenate((A_kron, np.negative(B_gains)), axis=0)
     return A_kron
 
-
-def formation(xx: np.array, horizon: int, Adj: np.array, NN: int, n_x: int, animate=True):
-    TT = np.size(horizon, 0)
-    for tt in range(np.size(horizon, 0)):
-        xx_tt = xx[:, tt].T
-        for ii in range(NN):
-            for jj in range(NN):
-                index_ii = ii * n_x + np.array(range(n_x))
-                p_prev = xx_tt[index_ii]
-                plt.plot(p_prev[0], p_prev[1], marker='o', markersize=20, fillstyle='none')
-                if Adj[ii, jj] & (jj > ii):
-                    index_jj = (jj % NN) * n_x + np.array(range(n_x))
-                    p_curr = xx_tt[index_jj]
-                    plt.plot([p_prev[0], p_curr[0]], [p_prev[1], p_curr[1]],
-                             linewidth=2, color='tab:blue', linestyle='solid')
-
-        axes_lim = (np.min(xx) - 1, np.max(xx) + 1)
-        plt.xlim(axes_lim)
-        plt.ylim(axes_lim)
-        plt.plot(xx[0:n_x * NN:n_x, :].T, xx[1:n_x * NN:n_x, :].T)
-        plt.axis('equal')
-
-        plt.show(block=False)
-        plt.pause(0.1)
-        plt.clf()
-
 # function used in ROS2 to define the dynamics of each agent
-def update_dynamics(dt: int, x_i: np.array, neigh: list, data, formation: np.array, agent_id: int,
-                    n_leaders: int, k_p: int, k_v: int,integral_action=False):
+def update_dynamics(dt: int, self):
 
-    n_x = np.shape(x_i)[0]
+    n_x = np.shape(self.x_i)[0]
     dd = n_x//2
     epsilon = 1e-2
     start = 0
 
-
-    x_i = x_i.reshape([n_x,1])
-    x_dot_i = np.zeros((n_x,1))
+    x_i = self.x_i
+    x_dot_i = np.zeros(n_x)
 
     pos_i = x_i[:dd]
     vel_i = x_i[dd:]
-    vel_dot_i = np.zeros((dd, 1))
-
-    error_pos = np.abs(pos_i - formation[0,agent_id,:].reshape((dd,1)))
-
-    if agent_id < n_leaders:
-        pos_dot_i = k_p*error_pos
-
-        x_dot_i = np.concatenate((pos_dot_i, vel_dot_i))
-
+    vel_dot_i = np.zeros(dd)
+    # ref_pos_i = self.formation[0, self.agent_id, :]
+    # error_pos = np.abs(pos_i - self.formation[0,self.agent_id,:])
+    if self.agent_id < self.n_leaders:
+        pos_dot_i = vel_i
+        vel_dot_i = 0.01*np.ones(dd)
+        x_dot_i = 0
         x_i = x_i + dt*x_dot_i
 
-        if np.linalg.norm(error_pos) < epsilon:
-            start = 1
-
+        # if np.linalg.norm(error_pos) < epsilon:
+        #     start = 1
         # for cycle to empty the buffer even if we're considering leaders, otherwise the algorithm will not converge
-        for node_j in neigh:
-            _ = np.array(data[node_j].pop(0)[1:-1]).reshape([n_x, 1])
+        for node_j in self.neigh:
+            _ = np.array(self.received_data[node_j].pop(0)[1:-1])
     else:
-        # for node_j in neigh:
-        #     x_j = np.array(data[node_j].pop(0)[1:]).reshape([n_x,1])
-        #     pos_j = x_j[:dd]
-        #     vel_j = x_j[dd:]
-        #
-        #     if integral_action:
-        #         pos_dot_i = vel_i
-        #         vel_dot_i = vel_dot_i - k_p*Pg_stack_ii[node_j, :]@(pos_i - pos_j) \
-        #                     - k_v*Pg_stack_ii[node_j, :]@(vel_i - vel_j)
-        #     else:
-        #         pos_dot_i = vel_i
-        #         vel_dot_i = vel_dot_i - k_p * Pg_stack_ii[node_j, :] @ (pos_i - pos_j) \
-        #                     - k_v * Pg_stack_ii[node_j, :] @ (vel_i - vel_j)
-        #
-        #     x_dot_i = np.concatenate((pos_dot_i, vel_dot_i))
-        for node_j in neigh:
-            _ = np.array(data[node_j].pop(0)[1:-1]).reshape([n_x, 1])
-        x_dot_i = 0
+        for node_j in self.neigh:
+            x_j = np.array(self.received_data[node_j].pop(0)[1:-1])
+            pos_j = x_j[:dd]
+            vel_j = x_j[dd:]
+
+            # ref_pos_j = self.formation[0, node_j, :]
+            # Pg_ij = proj_matrix(ref_pos_i, ref_pos_j)
+            Pg_ij = self.Pg_stack_ii[node_j, :, :]
+            if self.integral_action:
+                pos_dot_i = vel_i
+                vel_dot_i += - self.k_p*Pg_ij@(pos_i - pos_j) - self.k_v*Pg_ij@(vel_i - vel_j)
+            else:
+                pos_dot_i = vel_i
+                vel_dot_i = vel_dot_i - self.k_p* Pg_ij@(pos_i - pos_j) - self.k_v * Pg_ij@(vel_i - vel_j)
+
+            x_dot_i = np.concatenate((pos_dot_i, vel_dot_i))
+
         x_i = x_i + dt * x_dot_i
 
     return x_i, start

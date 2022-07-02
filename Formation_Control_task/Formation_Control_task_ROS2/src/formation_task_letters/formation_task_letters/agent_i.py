@@ -24,6 +24,9 @@ class Agent(Node):
 
         self.k_p = self.get_parameter('k_p').value
         self.k_v = self.get_parameter('k_v').value
+        self.k_i = self.get_parameter('k_i').value
+        self.integral_action = self.get_parameter('integral_action').value
+
         self.n_leaders = self.get_parameter('n_leaders').value
         self.NN = self.get_parameter('n_agents').value
 
@@ -34,6 +37,8 @@ class Agent(Node):
 
         formation = self.get_parameter('formation').value
         self.formation = np.array(formation).reshape(3,self.NN,dd)
+        Pg_stack_ii = self.get_parameter('proj_stack').value
+        self.Pg_stack_ii = np.array(Pg_stack_ii).reshape((self.NN, dd, dd))
 
         self.max_iters = self.get_parameter('max_iters').value
         self.communication_time = self.get_parameter('communication_time').value
@@ -91,11 +96,11 @@ class Agent(Node):
 
             # log files
             # 1) visualize on the terminal
-            string_for_logger = [round(i,4) for i in msg.data.tolist()[1:]]
+            string_for_logger = [round(i,4) for i in msg.data.tolist()[1:-1]]
             print("Iter = {} \t Value = {}".format(int(msg.data[0]), string_for_logger))
 
             # 2) save on file
-            data_for_csv = msg.data.tolist().copy()
+            data_for_csv = msg.data[:-1].tolist().copy()
             data_for_csv = [str(round(element,4)) for element in data_for_csv[1:]]
             data_for_csv = ','.join(data_for_csv)
             writer(self.file_name, data_for_csv + '\n')
@@ -117,8 +122,7 @@ class Agent(Node):
 
             if sync:
                 DeltaT = self.communication_time/10
-                self.x_i, self.start = update_dynamics(DeltaT, self.x_i, self.neigh, self.received_data, self.formation,
-                                           self.agent_id, self.n_leaders, self.k_p, self.k_v)
+                self.x_i, self.start = update_dynamics(DeltaT,self)
                 
                 # publish the updated message
                 msg.data = [float(self.tt)]
@@ -127,12 +131,12 @@ class Agent(Node):
                 self.publisher_.publish(msg)
 
                 # save data on csv file
-                data_for_csv = msg.data.tolist().copy()
+                data_for_csv = msg.data[:-1].tolist().copy()
                 data_for_csv = [str(round(element,4)) for element in data_for_csv[1:]]
                 data_for_csv = ','.join(data_for_csv)
                 writer(self.file_name,data_for_csv+'\n')
 
-                string_for_logger = [round(i,4) for i in msg.data.tolist()[1:]]
+                string_for_logger = [round(i,4) for i in msg.data.tolist()[1:-1]]
                 print("Iter = {} \t Value = {}".format(int(msg.data[0]), string_for_logger))
                 
                 # Stop the node if tt exceeds MAXITERS

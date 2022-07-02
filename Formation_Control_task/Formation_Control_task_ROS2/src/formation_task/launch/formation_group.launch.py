@@ -8,17 +8,18 @@ from ament_index_python.packages import get_package_share_directory
 
 
 def generate_launch_description():
-    MAXITERS = 1000
-    COMM_TIME = 10e-2 # communication time period
+    MAXITERS = 2000
+    COMM_TIME = 5e-2 # communication time period
     NN = 10 # number of agents
     n_leaders = 4 # number of leaders - first two in the vector
     dd = 2 # dimension of position vector and velocity vector
     n_x = 2*dd # dimension of the single vector x_i
 
-    k_p = 0.7 # position gain
-    k_v = 1.5 # velocity gain
-    k_i = 0.4 # integral gain
-    velocity_leader = 0.5
+    k_p = 1 # position gain
+    k_v = 3 # velocity gain
+    k_i = 0.01 # integral gain
+    acceleration_leader = 0
+    integral_action = False
 
 
     formations = {'A': [[1, 1], [9, 1], [5, 9], [5, 5], [2, 3], [3, 5], [4, 7], [6, 7], [7, 5], [8, 3]],
@@ -26,8 +27,8 @@ def generate_launch_description():
                 'C': [[7, 1], [7, 9], [6, 1], [6, 9], [5, 2], [5, 8], [4, 3], [4, 7], [4, 4], [4, 6]],
                 'square': [[5, 9], [2, 8], [8, 8], [4, 6], [6, 6], [4, 4], [6, 4], [2, 2], [8, 2], [5, 1]]}
 
-    temp_list = list(formations['square'])
-    temp_array = np.array(temp_list)
+    temp_list = list(formations['C'])
+    temp_array = np.array(formations['C'])
 
     # initialization of the tensor for node reference final positions
     Node_pos = np.zeros((NN, dd, 1))
@@ -85,10 +86,12 @@ def generate_launch_description():
                                 'Pg_stack_ii': Pg_stack_ii,
                                 'k_p': k_p,
                                 'k_v': k_v,
+                                'k_i': k_i,
                                 'n_leaders': n_leaders,
                                 'n_agents': NN,
                                 'node_pos': Node_pos,
-                                'leader_velocity': velocity_leader,
+                                'leader_acceleration': acceleration_leader,
+                                'integral_action': integral_action,
                                 }],
                 output='screen',
                 prefix='xterm -title "agent_{}" -hold -e'.format(ii)
