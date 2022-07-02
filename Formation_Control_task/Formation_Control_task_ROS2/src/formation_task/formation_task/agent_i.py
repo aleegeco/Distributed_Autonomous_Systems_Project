@@ -47,6 +47,7 @@ class Agent(Node):
         self.max_iters = self.get_parameter('max_iters').value
         self.communication_time = self.get_parameter('communication_time').value
 
+        self.store_acc = np.zeros((self.NN*dd, self.max_iters + 2))
         self.tt = 0
 
         # create logging file

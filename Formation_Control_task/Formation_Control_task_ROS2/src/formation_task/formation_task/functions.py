@@ -1,6 +1,7 @@
 import numpy as np
 import networkx as nx
 import matplotlib.pyplot as plt
+from roboticstoolbox.tools.trajectory import *
 
 
 def bearing_vector(vec_pi: np.array, vec_pj: np.array, d=None):
@@ -111,38 +112,54 @@ def update_dynamics(dt: int, self):
     vel_i = x_i[dd:]
     vel_dot_i = np.zeros(dd)
 
-    # compute the gain matrix for the case of time-varying leaders
-    for node_j in self.neigh:
-        K_i += self.Pg_stack_ii[node_j, :]
-
     if self.agent_id < self.n_leaders: # if the considered agent is a leader
         if self.leader_acceleration != 0: # if we impose an acceleration to leaders
             pos_dot_i = vel_i
-            vel_dot_i = np.ones(dd) * self.leader_acceleration
+            vel_dot_i = piecewise_acc(self)
             x_dot_i = np.concatenate((pos_dot_i, vel_dot_i))
             x_i = x_i + dt*x_dot_i
+
+            for node_j in self.neigh:  # for cycle to empty the buffer even if we're considering leaders, otherwise the algorithm will not continue
+                x_j = np.array(self.received_data[node_j].pop(0)[1:])
+                vel_j = x_j[dd:]
+
+                index_i = node_j * dd + np.arange(dd)
+                self.store_acc[index_i, self.tt] = vel_j  # store neighbors velocities to compute their derivatives
+
         else: # otherwise, the leader remains still
             x_i = x_i
-        # for cycle to empty the buffer even if we're considering leaders, otherwise the algorithm will not continue
-        for node_j in self.neigh:
-            _ = np.array(self.received_data[node_j].pop(0)[1:])
+            for node_j in self.neigh:  # for cycle to empty the buffer even if we're considering leaders,
+                                        # otherwise the algorithm will not continue
+                _ = np.array(self.received_data[node_j].pop(0)[1:])
 
     else: # if we are not leaders we'll enter this else
         for node_j in self.neigh:
+            K_i += self.Pg_stack_ii[node_j, :]
+
+        for node_j in self.neigh:
             x_j = np.array(self.received_data[node_j].pop(0)[1:]) # I take the received state from the message
-            # as before I split the state in two vectors
             pos_j = x_j[:dd]
             vel_j = x_j[dd:]
-            # increase the sum for the integral term
-            self.error_pos[self.agent_id, node_j, :] += (pos_i - pos_j)*dt
 
-            # set the Pg_ij* as a variable to make the code clearer
-            Pg_ij = self.Pg_stack_ii[node_j, :]
-            if self.integral_action: # if we want to apply the integral term
-                pos_dot_i = vel_i
-                vel_dot_i += - Pg_ij@(self.k_p*(pos_i - pos_j) + self.k_v*(vel_i - vel_j)\
-                                      + self.k_i*self.error_pos[self.agent_id, node_j, :])
-            else: # if we do not want the integral action
+            index_i = node_j*dd + np.arange(dd)
+            self.store_acc[index_i, self.tt] = vel_j  # store the acceleration to compute the derivative
+            self.error_pos[self.agent_id, node_j, :] += (pos_i - pos_j)*dt  # increase the sum for the integral term
+
+            Pg_ij = self.Pg_stack_ii[node_j, :]  # set the Pg_ij* as a variable to make the code clearer
+
+            if self.leader_acceleration:
+                vel_dot_j = calc_derivative(self, node_j) # numerical derivative for neighbors acceleration
+
+                if self.integral_action: # if we want to apply the integral term
+                    err_pos_ij = self.error_pos[self.agent_id, node_j, :]
+                    pos_dot_i = vel_i
+                    vel_dot_i += - np.linalg.inv(K_i)@(Pg_ij@(self.k_p*(pos_i - pos_j) \
+                                                        + self.k_v*(vel_i - vel_j)+ self.k_i*err_pos_ij - vel_dot_j))
+                else: # if we do not want the integral action
+                    pos_dot_i = vel_i
+                    vel_dot_i += - np.linalg.inv(K_i)@(Pg_ij@(self.k_p*(pos_i - pos_j)\
+                                                              + self.k_v*(vel_i - vel_j) - vel_dot_j))
+            else:
                 pos_dot_i = vel_i
                 vel_dot_i += - Pg_ij@(self.k_p*(pos_i - pos_j) + self.k_v*(vel_i - vel_j))
 
@@ -151,3 +168,27 @@ def update_dynamics(dt: int, self):
         x_i += dt * x_dot_i # forward euler to discretize the dynamics
 
     return x_i
+
+def calc_derivative(self, node_j):
+    n_x = np.shape(self.x_i)[0] # dimension of the state vector
+    dd = n_x//2 # dimension of position and velocity vector
+    dt = self.communication_time
+    index_i = node_j*dd + np.arange(dd)
+    if self.tt == 0:
+        vel_dot_j = self.store_acc[index_i, self.tt]/dt
+    else:
+        vel_j_t = self.store_acc[index_i, self.tt]
+        vel_j_t_1 = self.store_acc[index_i, self.tt - 1]
+        vel_dot_j = (vel_j_t - vel_j_t_1)/dt
+    return vel_dot_j
+
+def piecewise_acc(self):
+    n_x = np.shape(self.x_i)[0]
+    dd = n_x//2
+    time = np.linspace(0, self.max_iters, self.max_iters + 2)
+    tg = quintic(0, 100, time)
+    acc = 500*tg.qdd
+    acc_t = acc[self.tt]
+    acc_t = np.ones(dd)*acc_t
+    return acc_t
+
