@@ -19,7 +19,7 @@ def generate_launch_description():
     k_v = 3 # velocity gain
     k_i = 0.01 # integral gain
     acceleration_leader = 0
-    integral_action = False
+    integral_action = True
 
 
     formations = {'A': [[1, 1], [9, 1], [5, 9], [5, 5], [2, 3], [3, 5], [4, 7], [6, 7], [7, 5], [8, 3]],
@@ -27,7 +27,6 @@ def generate_launch_description():
                 'C': [[7, 1], [7, 9], [6, 1], [6, 9], [5, 2], [5, 8], [4, 3], [4, 7], [4, 4], [4, 6]],
                 'square': [[5, 9], [2, 8], [8, 8], [4, 6], [6, 6], [4, 4], [6, 4], [2, 2], [8, 2], [5, 1]]}
 
-    temp_list = list(formations['C'])
     temp_array = np.array(formations['C'])
 
     # initialization of the tensor for node reference final positions

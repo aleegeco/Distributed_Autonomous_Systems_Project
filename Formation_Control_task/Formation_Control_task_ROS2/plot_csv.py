@@ -106,7 +106,7 @@ plt.legend(legend); plt.grid()
 # animation of the position of all the agents
 if animation: # animation
     plt.figure()
-    dt = 5 # sub-sampling of the plot horizon
+    dt = 10 # sub-sampling of the plot horizon
     for tt in range(0,T_max,dt):
         xx_tt = xx_pos[:,tt].T
         for ii in range(NN):
