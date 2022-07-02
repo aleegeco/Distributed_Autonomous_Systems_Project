@@ -10,8 +10,8 @@ from ament_index_python.packages import get_package_share_directory
 def generate_launch_description():
     MAXITERS = 1500
     COMM_TIME = 10e-2 # communication time period
-    NN = 4 # number of agents
-    n_leaders = 2 # number of leaders - first two in the vector
+    NN = 6 # number of agents
+    n_leaders = 3 # number of leaders - first two in the vector
     dd = 2 # dimension of position vector and velocity vector
     n_x = 2*dd # dimension of the single vector x_i
 
@@ -20,31 +20,39 @@ def generate_launch_description():
     k_i = 0.01 # integral gain
 
     # variable which sets the leaders CONSTANT velocity
-    acceleration_leader = 0.1
-    integral_action = True
+    acceleration_leader = 0
+    integral_action = False
 
     # initialization of the tensor for node reference final positions
     Node_pos = np.zeros((NN, dd, 1))
 
     # set the position for each agent
     Node_pos[0, :, :] = np.array([
-        [1, 5]
+        [5.75, 5.30]
     ]).T
     # Node 1 (px py).T
     Node_pos[1, :, :] = np.array([
-        [5, 5]
+        [4.25, 5.30]
     ]).T
     # Node 2 (px py).T
     Node_pos[2, :, :] = np.array([
-        [1, 1]
+        [6.5, 4.0]
     ]).T
     # Node 3 (px py).T
     Node_pos[3, :, :] = np.array([
-        [5, 1]
+        [3.50, 4.0]
+    ]).T
+
+    Node_pos[4, :, :] = np.array([
+        [5.75, 2.70]
+    ]).T
+
+    Node_pos[5, :, :] = np.array([
+        [4.25, 2.70]
     ]).T
 
     # definition of the communication graph and its adjacency matrix
-    G = nx.binomial_graph(NN, 0.9)
+    G = nx.binomial_graph(NN, 1)
     Adj = nx.adjacency_matrix(G).toarray()
 
     # define initial conditions

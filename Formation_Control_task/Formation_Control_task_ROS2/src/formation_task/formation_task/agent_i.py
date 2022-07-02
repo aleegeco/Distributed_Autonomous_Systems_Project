@@ -1,7 +1,4 @@
-#
-# 11/05/2022
-# IN-LP
-#
+
 from time import sleep
 import numpy as np
 import rclpy
@@ -11,9 +8,7 @@ from formation_task.functions import *
 
 
 def writer(file_name, string):
-    """
-      inner function for logging
-    """
+
     file = open(file_name, "a") # "a" stands for "append"
     file.write(string)
     file.close()
@@ -34,7 +29,7 @@ class Agent(Node):
 
         self.n_leaders = self.get_parameter('n_leaders').value
         self.NN = self.get_parameter('n_agents').value
-        self.leader_velocity = self.get_parameter('leader_velocity').value
+        self.leader_acceleration = self.get_parameter('leader_acceleration').value
 
         x_i = self.get_parameter('xx_init').value # state vector value of node_i
         self.n_x = len(x_i) # dimension of the state vector of node_i
@@ -45,7 +40,9 @@ class Agent(Node):
         self.node_ref_pos = np.array(node_ref_pos).reshape([self.NN, dd, 1])
         Pg_stack_ii = self.get_parameter('Pg_stack_ii').value
         self.Pg_stack_ii = np.array(Pg_stack_ii).reshape([self.NN, dd, dd])
+
         self.error_pos = np.zeros((self.NN, self.NN, dd))
+        self.integral_action = self.get_parameter('integral_action').value
 
         self.max_iters = self.get_parameter('max_iters').value
         self.communication_time = self.get_parameter('communication_time').value
@@ -128,7 +125,7 @@ class Agent(Node):
 
             if sync:
                 DeltaT = self.communication_time/10
-                self.x_i = update_dynamics(DeltaT, self, integral_action=True, leader_velocity=self.leader_velocity)
+                self.x_i = update_dynamics(DeltaT, self) # update agent dynamics
                 
                 # publish the updated message
                 msg.data = [float(self.tt)]

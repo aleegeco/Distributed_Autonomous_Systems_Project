@@ -26,46 +26,46 @@ def bearing_vector(vec_pi: np.array, vec_pj: np.array, d=None):
 
 def proj_matrix(vec_pi: np.array, vec_pj: np.array, d=None):
     # Function that computes the Projection Matrix based on the vectors p_i and p_j
-    if d:
-        g_ij = bearing_vector(vec_pi, vec_pj, d)
+    if d:  # if we impose a different dimension
+        g_ij = bearing_vector(vec_pi, vec_pj, d)  # recall the function of bearing vector
         Id = np.identity(d)
-        Pg_ij = Id - g_ij @ g_ij.T
-    else:
+        Pg_ij = Id - g_ij @ g_ij.T  # compute the Pg_ij
+    else:  # if we do not impose dimension
         g_ij = bearing_vector(vec_pi, vec_pj)
         d1 = np.shape(g_ij)[0]
         Id = np.identity(d1)
-        Pg_ij = Id - g_ij @ g_ij.T
+        Pg_ij = Id - g_ij @ g_ij.T  # compute the Pg_ij
     return Pg_ij
 
 
 def proj_stack(pos_nodes: np.array, NN: int, d: int):
-    # function to define a tensor who store all projection matrices for the nodes
+    # function to define a tensor who store all projection matrices for each pair nodes
     Pg_stack = np.zeros((NN, NN, d, d))  # tensor of dimension (NN, NN, d,d)
     for node_i in range(NN):
         for node_j in range(NN):
             pos_j = pos_nodes[node_j, :, :]
             pos_i = pos_nodes[node_i, :, :]
             Pg_ij = proj_matrix(pos_i, pos_j)
-            Pg_stack[node_i, node_j, :, :] = Pg_ij
-    return Pg_stack
+            Pg_stack[node_i, node_j, :, :] = Pg_ij  # it stores for each pair of nodes (i,j) the associated proj. matrix
+    return Pg_stack  # return the store of all the Pg_ij for each pair of nodes
 
 
 def bearing_laplacian(Pg_stack: np.array, Adj: np.array, d: int):
     # function which computes the bearing laplacian
-    # it computes the matrix A_kron(G(p))
+    # it computes the matrix B(G(p*))
     n_agents = np.shape(Adj)[0]  # int representing number of agents
-    B_temp = np.zeros((n_agents, n_agents, d, d))  # tensor of 4 dimension to build matrix A_kron
+    B_temp = np.zeros((n_agents, n_agents, d, d))  # temp tensor of 4  dimension to create the matrix B(G(p*))
     for node_i in range(n_agents):
         list_neigh_i = np.nonzero(Adj[node_i])[0]  # neighbors of node i
         for node_j in range(n_agents):
             if node_j in list_neigh_i:  # if the node j is a neighbor
-                if node_j != node_i:  # if the nodes are not the sa,e
+                if node_j != node_i:  # if the nodes are not the same
                     B_temp[node_i, node_j, :, :] = - Pg_stack[node_i, node_j, :, :]
-            elif node_i == node_j:  # if the node are the same (block diagonal of matrix A_kron)
+            elif node_i == node_j:  # if the node are the same
                 for node_k in list_neigh_i:
                     B_temp[node_i, node_j, :, :] += Pg_stack[node_i, node_k, :, :]  # summation of the matrices Pg_ik
+    # now we explode the matrix B_temp by imposing the right dimension for B(G(p*))
     B = np.zeros((d * n_agents, d * n_agents))
-    # another cycle to build the matrix A_kron with the right dimensions
     for i in range(n_agents):
         for j in range(n_agents):
             for k in range(d):
@@ -95,71 +95,51 @@ def kron_dynamical_matrix(B: np.array, NN: int, n_leaders: int, k_p: int, k_v: i
     return A_kron
 
 
-def formation(xx: np.array, horizon: int, Adj: np.array, NN: int, n_x: int, animate=True):
-    TT = np.size(horizon, 0)
-    for tt in range(np.size(horizon, 0)):
-        xx_tt = xx[:, tt].T
-        for ii in range(NN):
-            for jj in range(NN):
-                index_ii = ii * n_x + np.array(range(n_x))
-                p_prev = xx_tt[index_ii]
-                plt.plot(p_prev[0], p_prev[1], marker='o', markersize=20, fillstyle='none')
-                if Adj[ii, jj] & (jj > ii):
-                    index_jj = (jj % NN) * n_x + np.array(range(n_x))
-                    p_curr = xx_tt[index_jj]
-                    plt.plot([p_prev[0], p_curr[0]], [p_prev[1], p_curr[1]],
-                             linewidth=2, color='tab:blue', linestyle='solid')
+def update_dynamics(dt: int, self):
+    # function which update the dynamics of each agent in ROS2, it is computed agent-wise not in compact matrix form
+    # it takes "self" so we can use every class variable without explicitly declare it
 
-        axes_lim = (np.min(xx) - 1, np.max(xx) + 1)
-        plt.xlim(axes_lim)
-        plt.ylim(axes_lim)
-        plt.plot(xx[0:n_x * NN:n_x, :].T, xx[1:n_x * NN:n_x, :].T)
-        plt.axis('equal')
+    n_x = np.shape(self.x_i)[0] # dimension of the state vector
+    dd = n_x//2 # dimension of position and velocity vector (i.e. we're in the plane XY or in the space XYZ)
 
-        plt.show(block=False)
-        plt.pause(0.1)
-        plt.clf()
-
-# function used in ROS2 to define the dynamics of each agent
-def update_dynamics(dt: int, self, integral_action=False, leader_velocity=0):
-    n_x = np.shape(self.x_i)[0]
-    dd = n_x//2
-
-    x_i = self.x_i
+    x_i = self.x_i # state of the agent i at this time step
     x_dot_i = np.zeros(n_x)
 
+    # divide the dynamics in position and velocity vector
     pos_i = x_i[:dd]
     vel_i = x_i[dd:]
     vel_dot_i = np.zeros(dd)
 
-    if self.agent_id < self.n_leaders:
-        if leader_velocity != 0:
-            pos_dot_i = np.ones(dd)*leader_velocity
+    if self.agent_id < self.n_leaders: # if the considered agent is a leader
+        if self.leader_acceleration != 0: # if we impose a CONSTANT acceleration to the leader (linear velocity)
+            pos_dot_i = vel_i
+            vel_dot_i = np.ones(dd) * self.leader_acceleration
             x_dot_i = np.concatenate((pos_dot_i, vel_dot_i))
             x_i = x_i + dt*x_dot_i
-        else:
+        else: # otherwise the leader remains still
             x_i = x_i
-
-        # for cycle to empty the buffer even if we're considering leaders, otherwise the algorithm will not converge
+        # for cycle to empty the buffer even if we're considering leaders, otherwise the algorithm will not continue
         for node_j in self.neigh:
             _ = np.array(self.received_data[node_j].pop(0)[1:])
-    else:
+
+    else: # if we are not leaders we'll enter this else
         for node_j in self.neigh:
-            x_j = np.array(self.received_data[node_j].pop(0)[1:])
+            x_j = np.array(self.received_data[node_j].pop(0)[1:]) # I take the received state from the message
+            # as before I split the state in two vectors
             pos_j = x_j[:dd]
             vel_j = x_j[dd:]
+            # increase the sum for the integral term
             self.error_pos[self.agent_id, node_j, :] += (pos_i - pos_j)*dt
-            if integral_action:
+            if self.integral_action: # if we want to apply the integral term
                 pos_dot_i = vel_i
                 vel_dot_i += - self.Pg_stack_ii[node_j, :]@(self.k_p*(pos_i - pos_j) \
-                            + self.k_v*(vel_i - vel_j) + self.k_i*self.error_pos[self.agent_id, node_j, :])
-            else:
+                            + self.k_v*(vel_i - vel_j)+self.k_i*self.error_pos[self.agent_id, node_j, :])
+            else: # if we do not want the integral action
                 pos_dot_i = vel_i
-                vel_dot_i += - self.k_p * self.Pg_stack_ii[node_j, :] @ (pos_i - pos_j) \
-                             - self.k_v * self.Pg_stack_ii[node_j, :] @ (vel_i - vel_j)
+                vel_dot_i += - self.Pg_stack_ii[node_j, :]@(self.k_p*(pos_i - pos_j) + self.k_v*(vel_i - vel_j))
 
             x_dot_i = np.concatenate((pos_dot_i, vel_dot_i))
 
-        x_i += dt * x_dot_i
+        x_i += dt * x_dot_i # forward euler to discretize the dynamics
 
     return x_i

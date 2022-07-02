@@ -10,29 +10,33 @@ signal.signal(signal.SIGINT, signal.SIG_DFL)
 _, _, files = next(os.walk("./_csv_file"))
 NN = len(files)
 
-animation = False
+animation = True
 xx_csv = {}
+xx_ref_pos_csv = {}
 Tlist = []
 
+# load from csv agents dynamics and store them into arrays
 for ii in range(NN):
     xx_csv[ii] = np.genfromtxt("_csv_file/agent_{}.csv".format(ii), delimiter=',').T
     Tlist.append(xx_csv[ii].shape[1])
 
-xx_ref_pos_csv = {}
+# load from csv agents reference positions and store them into arrays
 for ii in range(NN):
     xx_ref_pos_csv[ii] = np.genfromtxt("_csv_file_pos/agent_ref_pos{}.csv".format(ii), delimiter=',').T
 
+# state dimension
 n_x = xx_csv[ii].shape[0]
+# dimension of position and velocity vectors (i.e. plane X-Y or space X-Y-Z)
 dd = n_x//2
 
-print(n_x)
-T_max = min(Tlist)
+T_max = min(Tlist)  # max iterations
 
+# initializations of vectors
 xx_pos = np.zeros((NN*dd, T_max))
 xx_vel = np.zeros((NN*dd, T_max))
 xx_ref_pos = np.zeros((NN*dd))
 
-# Store differently positions and velocities
+# Store differently positions and velocities to plot them separetely
 for ii in range(NN):
     index_ii = ii*dd + np.arange(dd)
     xx_pos[index_ii, :] = xx_csv[ii][:dd][:T_max] # useful to remove last samples
@@ -45,7 +49,6 @@ legend = []
 plt.figure()
 plt.title("Evolution of $p_{i,x}$")
 for node in range(NN):
-    print(node)
     plt.plot(range(T_max), xx_pos[node*2, :])
     legend.append("i: {}".format(node))
 plt.legend(legend); plt.grid()
@@ -77,6 +80,7 @@ for node in range(NN):
     legend.append("i: {}".format(node))
 plt.legend(legend); plt.grid()
 
+# plot error evolution in distance between agents and their reference positions
 legend = []
 plt.figure()
 plt.title("Error evolution $|e_{i,p_{x}}|$")
@@ -85,6 +89,7 @@ for node in range(NN):
     legend.append("i: {}".format(node))
 plt.legend(legend); plt.grid()
 
+# plot error evolution in distance between agents and their reference positions
 legend = []
 plt.figure()
 plt.title("Error evolution $|e_{i,p_{y}}|$")
@@ -96,11 +101,12 @@ plt.legend(legend); plt.grid()
 
 # block_var = False if n_x < 3 else True
 # plt.show(block=block_var)
-#
 
+
+# animation of the position of all the agents
 if animation: # animation
     plt.figure()
-    dt = 3 # sub-sampling of the plot horizon
+    dt = 5 # sub-sampling of the plot horizon
     for tt in range(0,T_max,dt):
         xx_tt = xx_pos[:,tt].T
         for ii in range(NN):
