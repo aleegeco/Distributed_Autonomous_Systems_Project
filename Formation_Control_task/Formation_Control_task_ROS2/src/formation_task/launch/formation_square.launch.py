@@ -31,7 +31,7 @@ def generate_launch_description():
                   'group': [[5, 9], [2, 8], [8, 8], [4, 6], [6, 6], [4, 4], [6, 4], [2, 2], [8, 2], [5, 1]]}
 
 
-    temp_array = np.array(formations['exagon'])
+    temp_array = np.array(formations['group'])
     NN = len(temp_array) # number of agents
     n_leaders = NN//2 - 1 # number of leaders - firsts positions in the vector
 

@@ -101,6 +101,7 @@ def update_dynamics(dt: int, self):
 
     n_x = np.shape(self.x_i)[0] # dimension of the state vector
     dd = n_x//2 # dimension of position and velocity vector (i.e. we're in the plane XY or in the space XYZ)
+    K_i = np.zeros((dd,dd))
 
     x_i = self.x_i # state of the agent i at this time step
     x_dot_i = np.zeros(n_x)
@@ -110,13 +111,17 @@ def update_dynamics(dt: int, self):
     vel_i = x_i[dd:]
     vel_dot_i = np.zeros(dd)
 
+    # compute the gain matrix for the case of time-varying leaders
+    for node_j in self.neigh:
+        K_i += self.Pg_stack_ii[node_j, :]
+
     if self.agent_id < self.n_leaders: # if the considered agent is a leader
-        if self.leader_acceleration != 0: # if we impose a CONSTANT acceleration to the leader (linear velocity)
+        if self.leader_acceleration != 0: # if we impose an acceleration to leaders
             pos_dot_i = vel_i
             vel_dot_i = np.ones(dd) * self.leader_acceleration
             x_dot_i = np.concatenate((pos_dot_i, vel_dot_i))
             x_i = x_i + dt*x_dot_i
-        else: # otherwise the leader remains still
+        else: # otherwise, the leader remains still
             x_i = x_i
         # for cycle to empty the buffer even if we're considering leaders, otherwise the algorithm will not continue
         for node_j in self.neigh:
@@ -130,13 +135,16 @@ def update_dynamics(dt: int, self):
             vel_j = x_j[dd:]
             # increase the sum for the integral term
             self.error_pos[self.agent_id, node_j, :] += (pos_i - pos_j)*dt
+
+            # set the Pg_ij* as a variable to make the code clearer
+            Pg_ij = self.Pg_stack_ii[node_j, :]
             if self.integral_action: # if we want to apply the integral term
                 pos_dot_i = vel_i
-                vel_dot_i += - self.Pg_stack_ii[node_j, :]@(self.k_p*(pos_i - pos_j) \
-                            + self.k_v*(vel_i - vel_j)+self.k_i*self.error_pos[self.agent_id, node_j, :])
+                vel_dot_i += - Pg_ij@(self.k_p*(pos_i - pos_j) + self.k_v*(vel_i - vel_j)\
+                                      + self.k_i*self.error_pos[self.agent_id, node_j, :])
             else: # if we do not want the integral action
                 pos_dot_i = vel_i
-                vel_dot_i += - self.Pg_stack_ii[node_j, :]@(self.k_p*(pos_i - pos_j) + self.k_v*(vel_i - vel_j))
+                vel_dot_i += - Pg_ij@(self.k_p*(pos_i - pos_j) + self.k_v*(vel_i - vel_j))
 
             x_dot_i = np.concatenate((pos_dot_i, vel_dot_i))
 
