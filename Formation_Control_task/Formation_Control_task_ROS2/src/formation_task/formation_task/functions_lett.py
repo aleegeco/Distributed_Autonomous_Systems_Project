@@ -109,29 +109,20 @@ def update_dynamics(dt: int, self):
     pos_i = x_i[:dd]
     vel_i = x_i[dd:]
     vel_dot_i = np.zeros(dd)
-    w_i = np.ones(dd) * 0.1 # constant input disturbance
 
     if self.agent_id < self.n_leaders: # if the considered agent is a leader
-        if self.leader_acceleration: # if we impose an acceleration to leaders
-            pos_dot_i = vel_i
-            vel_dot_i = piecewise_acc(self)
-            x_dot_i = np.concatenate((pos_dot_i, vel_dot_i))
-            x_i = x_i + dt*x_dot_i
-
-            for node_j in self.neigh:  # for cycle to empty the buffer even if we're considering leaders, otherwise the algorithm will not continue
-                x_j = np.array(self.received_data[node_j].pop(0)[1:])
-                # vel_j = x_j[dd:]
-                # index_i = node_j * dd + np.arange(dd)
-                # self.store_acc[index_i, self.tt] = vel_j  # store neighbors velocities to compute their derivatives
-        else: # otherwise, the leader remains still
-            x_i = x_i
-            for node_j in self.neigh:  # for cycle to empty the buffer even if we're considering leaders,
+        x_i = x_i
+        if self.old_lett != self.current_lett:
+            self.old_lett = self.current_lett
+            x_i[:dd] = self.node_ref_pos[self.current_lett, self.agent_id, :].reshape((dd))
+        for node_j in self.neigh:  # for cycle to empty the buffer even if we're considering leaders,
                                         # otherwise the algorithm will not continue
-                _ = np.array(self.received_data[node_j].pop(0)[1:])
+            x_j = np.array(self.received_data[node_j].pop(0)[1:])
 
     else: # if we are not leaders we'll enter this else
-        for node_j in self.neigh:
-            K_i += self.Pg_stack_ii[node_j, :]
+        if self.leader_acceleration:
+            for node_j in self.neigh:
+                K_i += self.Pg_stack_word_ii[self.current_lett, node_j, :]
 
         for node_j in self.neigh:
             x_j = np.array(self.received_data[node_j].pop(0)[1:]) # I take the received state from the message
@@ -141,26 +132,16 @@ def update_dynamics(dt: int, self):
             index_i = node_j*dd + np.arange(dd)
             self.store_acc[index_i, self.tt] = vel_j  # store the acceleration to compute the derivative
             self.error_pos[self.agent_id, node_j, :] += (pos_i - pos_j)*dt  # increase the sum for the integral term
-            Pg_ij = self.Pg_stack_ii[node_j, :]  # set the Pg_ij* as a variable to make the code clearer
+            Pg_ij = self.Pg_stack_word_ii[self.current_lett, node_j, :]  # set the Pg_ij* as a variable to make the code clearer
 
             if self.leader_acceleration:
                 vel_dot_j = calc_derivative(self, node_j) # numerical derivative for neighbors acceleration
                 pos_dot_i = vel_i
                 vel_dot_i += - np.linalg.inv(K_i)@(Pg_ij @ (self.k_p * (pos_i - pos_j) \
                                                               + self.k_v * (vel_i - vel_j) - vel_dot_j))
-                if self.integral_action: # if we want to apply the integral term
-                    err_pos_ij = self.error_pos[self.agent_id, node_j, :]
-                    pos_dot_i = vel_i
-                    vel_dot_i += - np.linalg.inv(K_i)@(Pg_ij@(self.k_p*(pos_i - pos_j) \
-                                            + self.k_v*(vel_i - vel_j)+ self.k_i*err_pos_ij - vel_dot_j)) + w_i
             else:
                 pos_dot_i = vel_i
                 vel_dot_i += - Pg_ij@(self.k_p*(pos_i - pos_j) + self.k_v*(vel_i - vel_j))
-
-                if self.integral_action: # if we want to apply the integral term
-                    err_pos_ij = self.error_pos[self.agent_id, node_j, :]
-                    pos_dot_i = vel_i
-                    vel_dot_i += - (Pg_ij@(self.k_p*(pos_i - pos_j) + self.k_v*(vel_i - vel_j)+ self.k_i*err_pos_ij)) + w_i
 
             x_dot_i = np.concatenate((pos_dot_i, vel_dot_i))
 

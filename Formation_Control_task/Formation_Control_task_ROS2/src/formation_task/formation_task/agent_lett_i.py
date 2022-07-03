@@ -4,10 +4,11 @@ import numpy as np
 import rclpy
 from rclpy.node import Node
 from std_msgs.msg import Float32MultiArray as msg_float
-from formation_task_letters.functions_letters import *
+from formation_task.functions_lett import *
 
 
 def writer(file_name, string):
+
     file = open(file_name, "a") # "a" stands for "append"
     file.write(string)
     file.close()
@@ -25,34 +26,40 @@ class Agent(Node):
         self.k_p = self.get_parameter('k_p').value
         self.k_v = self.get_parameter('k_v').value
         self.k_i = self.get_parameter('k_i').value
-        self.integral_action = self.get_parameter('integral_action').value
 
         self.n_leaders = self.get_parameter('n_leaders').value
         self.NN = self.get_parameter('n_agents').value
+        self.n_letters = self.get_parameter('n_letters').value
+        self.leader_acceleration = self.get_parameter('leader_acceleration').value
 
         x_i = self.get_parameter('xx_init').value # state vector value of node_i
         self.n_x = len(x_i) # dimension of the state vector of node_i
         self.x_i = np.array(x_i) # it returns an n_x by 1 array
         dd = self.n_x//2
 
-        formation = self.get_parameter('formation').value
-        self.formation = np.array(formation).reshape(3,self.NN,dd)
-        Pg_stack_ii = self.get_parameter('proj_stack').value
-        self.Pg_stack_ii = np.array(Pg_stack_ii).reshape((self.NN, dd, dd))
+        node_ref_pos = self.get_parameter('node_pos').value
+        self.node_ref_pos = np.array(node_ref_pos).reshape([self.n_letters, self.NN, dd, 1])
+        Pg_stack_word_ii = self.get_parameter('Pg_stack_word_ii').value
+        self.Pg_stack_word_ii = np.array(Pg_stack_word_ii).reshape([self.n_letters, self.NN, dd, dd])
+
+        self.error_pos = np.zeros((self.NN, self.NN, dd))
+        self.integral_action = self.get_parameter('integral_action').value
 
         self.max_iters = self.get_parameter('max_iters').value
         self.communication_time = self.get_parameter('communication_time').value
 
+        self.store_acc = np.zeros((self.NN*dd, self.max_iters + 2))
         self.tt = 0
-        self.start = 0
+        self.current_lett = 0
+        self.old_lett = 0
 
         # create logging file
         self.file_name = "_csv_file/agent_{}.csv".format(self.agent_id)
-        # self.file_name_pos = "_csv_file_pos/agent_ref_pos{}.csv".format(self.agent_id)
+        self.file_name_pos = "_csv_file_pos/agent_ref_pos{}.csv".format(self.agent_id)
         file = open(self.file_name, "w+") # 'w+' needs to create file and open in writing mode if doesn't exist
-        # file_pos = open(self.file_name_pos, "w+")
+        file_pos = open(self.file_name_pos, "w+")
         file.close()
-        # file_pos.close()
+        file_pos.close()
 
         # initialize subscription dict
         self.subscriptions_list = {}
@@ -90,25 +97,26 @@ class Agent(Node):
             msg.data = [float(self.tt)]
 
             [msg.data.append(float(element)) for element in self.x_i]
-            msg.data.append(self.start)
+
             self.publisher_.publish(msg)
             self.tt += 1
 
             # log files
             # 1) visualize on the terminal
-            string_for_logger = [round(i,4) for i in msg.data.tolist()[1:-1]]
-            print("Iter = {} \t Value = {}".format(int(msg.data[0]), string_for_logger))
+            string_for_logger = [round(i,4) for i in msg.data.tolist()[1:]]
+            print("Iter = {} \t Value = {} \t letter = {}".format(int(msg.data[0]), string_for_logger, self.current_lett))
 
             # 2) save on file
-            data_for_csv = msg.data[:-1].tolist().copy()
+            data_for_csv = msg.data.tolist().copy()
             data_for_csv = [str(round(element,4)) for element in data_for_csv[1:]]
             data_for_csv = ','.join(data_for_csv)
             writer(self.file_name, data_for_csv + '\n')
 
             # # 3) csv file for nodes reference positions
-            # data_pos_csv = self.node_ref_pos[self.agent_id,:,:].tolist().copy() #TODO aggiornare csv per nuova formation
+            ## TODO aggiustare con lettere
+            # data_pos_csv = self.node_ref_pos[self.agent_id,:,:].tolist().copy()
             # data_pos_csv = [str(element) for element in data_pos_csv]
-            # data_pos_csv = ','.join(data_pos_csv)
+            # data_pos_csv = ','.join(data_pos_csv).replace('[',' ').replace(']'," ").strip(" ")
             # writer(self.file_name_pos, data_pos_csv + '\n')
 
         else: 
@@ -122,23 +130,24 @@ class Agent(Node):
 
             if sync:
                 DeltaT = self.communication_time/10
-                self.x_i, self.start = update_dynamics(DeltaT,self)
+                self.x_i = update_dynamics(DeltaT, self) # update agent dynamics
                 
                 # publish the updated message
                 msg.data = [float(self.tt)]
                 [msg.data.append(float(element)) for element in self.x_i]
-                msg.data.append(self.start)
                 self.publisher_.publish(msg)
 
                 # save data on csv file
-                data_for_csv = msg.data[:-1].tolist().copy()
+                data_for_csv = msg.data.tolist().copy()
                 data_for_csv = [str(round(element,4)) for element in data_for_csv[1:]]
                 data_for_csv = ','.join(data_for_csv)
                 writer(self.file_name,data_for_csv+'\n')
 
-                string_for_logger = [round(i,4) for i in msg.data.tolist()[1:-1]]
+                string_for_logger = [round(i,4) for i in msg.data.tolist()[1:]]
                 print("Iter = {} \t Value = {}".format(int(msg.data[0]), string_for_logger))
-                
+
+                self.current_lett = self.tt//int((self.max_iters/self.n_letters))
+
                 # Stop the node if tt exceeds MAXITERS
                 if self.tt > self.max_iters:
                     print("\nMAXITERS reached")

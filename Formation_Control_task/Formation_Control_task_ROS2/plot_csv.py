@@ -10,7 +10,7 @@ signal.signal(signal.SIGINT, signal.SIG_DFL)
 _, _, files = next(os.walk("./_csv_file"))
 NN = len(files)
 
-plot = False
+plot = True
 animation = True
 moving_leaders = True
 
@@ -23,7 +23,7 @@ for ii in range(NN):
     xx_csv[ii] = np.genfromtxt("_csv_file/agent_{}.csv".format(ii), delimiter=',').T
     Tlist.append(xx_csv[ii].shape[1])
 
-# load from csv agents reference positions and store them into arrays
+#load from csv agents reference positions and store them into arrays
 for ii in range(NN):
     xx_ref_pos_csv[ii] = np.genfromtxt("_csv_file_pos/agent_ref_pos{}.csv".format(ii), delimiter=',').T
 

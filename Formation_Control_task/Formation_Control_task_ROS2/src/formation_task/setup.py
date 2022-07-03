@@ -2,7 +2,7 @@ from setuptools import setup
 from glob import glob
 
 package_name = 'formation_task'
-scripts = ['agent_i','visualizer']
+scripts = ['agent_i','agent_lett_i','visualizer']
 
 setup(
     name=package_name,
