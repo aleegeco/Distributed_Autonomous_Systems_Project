@@ -57,9 +57,9 @@ class Agent(Node):
         self.file_name = "_csv_file/agent_{}.csv".format(self.agent_id)
         self.file_name_pos = "_csv_file_pos/agent_ref_pos{}.csv".format(self.agent_id)
         file = open(self.file_name, "w+") # 'w+' needs to create file and open in writing mode if doesn't exist
-        file_pos = open(self.file_name_pos, "w+")
+        #file_pos = open(self.file_name_pos, "w+")
         file.close()
-        file_pos.close()
+        #file_pos.close()
 
         # initialize subscription dict
         self.subscriptions_list = {}
@@ -147,6 +147,8 @@ class Agent(Node):
                 print("Iter = {} \t Value = {}".format(int(msg.data[0]), string_for_logger))
 
                 self.current_lett = self.tt//int((self.max_iters/self.n_letters))
+                if self.current_lett == self.n_letters:
+                    self.current_lett -= 1
 
                 # Stop the node if tt exceeds MAXITERS
                 if self.tt > self.max_iters:

@@ -1,6 +1,5 @@
 import numpy as np
 import networkx as nx
-import matplotlib.pyplot as plt
 from roboticstoolbox.tools.trajectory import *
 
 
@@ -112,11 +111,11 @@ def update_dynamics(dt: int, self):
 
     if self.agent_id < self.n_leaders: # if the considered agent is a leader
         x_i = x_i
-        if self.old_lett != self.current_lett:
+        if self.old_lett != self.current_lett and self.old_lett <= self.n_letters:
             self.old_lett = self.current_lett
             x_i[:dd] = self.node_ref_pos[self.current_lett, self.agent_id, :].reshape((dd))
-        for node_j in self.neigh:  # for cycle to empty the buffer even if we're considering leaders,
-                                        # otherwise the algorithm will not continue
+
+        for node_j in self.neigh:  # for cycle to empty the buffer even if we're considering leaders
             x_j = np.array(self.received_data[node_j].pop(0)[1:])
 
     else: # if we are not leaders we'll enter this else
@@ -132,7 +131,11 @@ def update_dynamics(dt: int, self):
             index_i = node_j*dd + np.arange(dd)
             self.store_acc[index_i, self.tt] = vel_j  # store the acceleration to compute the derivative
             self.error_pos[self.agent_id, node_j, :] += (pos_i - pos_j)*dt  # increase the sum for the integral term
-            Pg_ij = self.Pg_stack_word_ii[self.current_lett, node_j, :]  # set the Pg_ij* as a variable to make the code clearer
+            print("Pg_shape",self.Pg_stack_word_ii.shape)
+            print("current lett", self.current_lett)
+            print("node_j", node_j)
+            Pg_ij = self.Pg_stack_word_ii[self.current_lett, node_j, :, :]  # set the Pg_ij* as a variable to make the code clearer
+
 
             if self.leader_acceleration:
                 vel_dot_j = calc_derivative(self, node_j) # numerical derivative for neighbors acceleration

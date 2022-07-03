@@ -31,12 +31,12 @@ def generate_launch_description():
                   'C': [[7, 1], [7, 9], [6, 1], [6, 9], [5, 2], [5, 8], [4, 3], [4, 7], [4, 4], [4, 6]],
                   'D':[ [8, 6], [8, 14], [12, 10], [8, 10], [8, 8], [8, 12], [10, 13.47], [11.48, 11.97], [11.48, 8], [10, 6.5]],
                   'S':[[8, 10], [7, 6], [9, 14], [6, 12], [10, 8], [6.57, 10.6], [6.57, 13.42], [9.15, 6.36], [9.15, 9.61], [8, 14]],
-                  'group': [[5, 9], [2, 8], [8, 8], [4, 6], [6, 6], [4, 4], [6, 4], [2, 2], [8, 2], [5, 1]]}
+                  'group': [[2, 8], [6, 4], [8, 8], [4, 6], [8, 2], [5, 9],  [6, 6], [4, 4], [2, 2],  [5, 1]]}
 
 
     temp_array = np.array(formations['group'])
     NN = len(temp_array) # number of agents
-    n_leaders = NN//2 - 1 # number of leaders - firsts positions in the vector
+    n_leaders = NN//2 # number of leaders - firsts positions in the vector
 
     Node_pos = np.zeros((NN, dd, 1))
     # set the reference position for each agent

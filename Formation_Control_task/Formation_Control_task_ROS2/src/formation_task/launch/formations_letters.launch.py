@@ -8,7 +8,7 @@ from ament_index_python.packages import get_package_share_directory
 
 
 def generate_launch_description():
-    MAXITERS = 2000
+    MAXITERS = 1000
     COMM_TIME = 10e-2 # communication time period
     dd = 2 # dimension of position vector and velocity vector
     n_x = 2*dd # dimension of the single vector x_i
@@ -21,7 +21,7 @@ def generate_launch_description():
     k_i = 0.3 # integral gain
 
 
-    acceleration_leader = True # variable which sets the leaders acceleration
+    acceleration_leader = False # variable which sets the leaders acceleration
     integral_action = False # variable which sets the integral action
     random_init = True # variable which sets randomly the intial conditions
 

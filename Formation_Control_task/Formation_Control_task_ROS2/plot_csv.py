@@ -127,7 +127,7 @@ if animation: # animation
 
         axes_lim = (np.min(xx_pos)-1,np.max(xx_pos)+1)
         plt.xlim(axes_lim); plt.ylim(axes_lim)
-        plt.plot(xx_pos[0:dd*NN:dd,:].T,xx_pos[1:dd*NN:dd,:].T)
+        plt.plot(xx_pos[0:dd*NN:dd,:].T,xx_pos[1:dd*NN:dd,:].T,linestyle="dashed")
         plt.grid()
         plt.title("Animation of the simulated formation")
         plt.xlabel("$p_x$"); plt.ylabel("$p_y$")
