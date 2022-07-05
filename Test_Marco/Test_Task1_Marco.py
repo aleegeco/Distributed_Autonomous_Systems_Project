@@ -150,10 +150,12 @@ dim_layer = d[0] # number of neurons considering bias
 ## ALGORITHM ##
 
 uu = np.zeros((NN, max_iters, T-1, dim_layer, dim_layer + 1)) # +1 means bias
+#uu[:,0,:,:,:] = np.random.rand(uu[:,0,:,:,:].shape)
 yy = np.zeros((NN, max_iters, T-1, dim_layer, dim_layer + 1))
 grad_u = np.zeros((NN, max_iters, T-1, dim_layer, dim_layer + 1)) # +1 means bias
 
-# force the last layer to have a 1
+# force the last layer to have a 1ù
+#uu[agent, iteration, layer, neuron, neuron + bias]
 uu[:,:,-1, 0] = 1
 JJ = np.zeros((NN, max_iters))
 
@@ -169,10 +171,8 @@ for agent in range(NN):
 
         xx = forward_pass(uu[agent, 0], temp_data, T, dim_layer)
         # xx_test = forward_pass(uu[agent, 0], temp_data_test, T, dim_layer)
-        pred = xx[-1]
-        # pred_test = xx[-1]
 
-        lambda_T = 2 * (pred - temp_label)
+        lambda_T = 2 * (xx[-1] - temp_label)
         # JJ[agent, 0] += (pred_test - temp_label_test) @ (pred_test - temp_label_test).T
 
         delta_u = backward_pass(xx, uu[agent, 0], lambda_T, T, dim_layer)
@@ -194,8 +194,8 @@ for iter in range(1, max_iters-1):
             temp_label = label_point[agent, image]
 
             xx = forward_pass(uu[agent, iter], temp_data, T, dim_layer)
-            pred = xx[-1]
-            lambda_T = 2 * (pred - temp_label)
+
+            lambda_T = 2 * (xx[-1] - temp_label)
             delta_u = backward_pass(xx, uu[agent, iter], lambda_T, T, dim_layer)
             for layer in range(T - 1):
                 grad_u[agent, iter, layer] += delta_u[layer] / (np.shape(temp_data)[0])
@@ -208,7 +208,7 @@ for iter in range(1, max_iters-1):
 
             for neigh in G.neighbors(agent):
                 yy[agent, iter, layer] = WW[agent, neigh]*yy[neigh, iter-1, layer]
-        # for layer in range(T-1):
+
             uu[agent, iter+1, layer] = WW[agent, agent]*uu[agent, iter, layer] - stepsize*yy[agent, iter, layer]
 
             for neigh in G.neighbors(agent):
