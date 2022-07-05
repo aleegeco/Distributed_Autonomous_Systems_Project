@@ -15,7 +15,7 @@ animation = True
 moving_leaders = True
 
 xx_csv = {}
-xx_ref_pos_csv = {}
+# xx_ref_pos_csv = {}
 Tlist = []
 
 # load from csv agents dynamics and store them into arrays
@@ -24,8 +24,8 @@ for ii in range(NN):
     Tlist.append(xx_csv[ii].shape[1])
 
 #load from csv agents reference positions and store them into arrays
-for ii in range(NN):
-    xx_ref_pos_csv[ii] = np.genfromtxt("_csv_file_pos/agent_ref_pos{}.csv".format(ii), delimiter=',').T
+# for ii in range(NN):
+#     xx_ref_pos_csv[ii] = np.genfromtxt("_csv_file_pos/agent_ref_pos{}.csv".format(ii), delimiter=',').T
 
 # state dimension
 n_x = xx_csv[ii].shape[0]
@@ -37,14 +37,14 @@ T_max = min(Tlist)  # max iterations
 # initializations of vectors
 xx_pos = np.zeros((NN*dd, T_max))
 xx_vel = np.zeros((NN*dd, T_max))
-xx_ref_pos = np.zeros((NN*dd))
+# xx_ref_pos = np.zeros((NN*dd))
 
 # Store differently positions and velocities to plot them separetely
 for ii in range(NN):
     index_ii = ii*dd + np.arange(dd)
     xx_pos[index_ii, :] = xx_csv[ii][:dd][:T_max] # useful to remove last samples
     xx_vel[index_ii, :] = xx_csv[ii][dd:][:T_max]
-    xx_ref_pos[index_ii] = xx_ref_pos_csv[ii][:]
+    # xx_ref_pos[index_ii] = xx_ref_pos_csv[ii][:]
 
 if plot:
 # Plot of evolution of position x over time for each node
@@ -86,23 +86,24 @@ if plot:
     if moving_leaders:
         pass
     else:
-        # plot error evolution in distance between agents and their reference positions
-        legend = []
-        plt.figure()
-        plt.title("Error evolution $|e_{i,p_{x}}|$")
-        for node in range(NN):
-            plt.plot(range(T_max), np.abs(xx_pos[node * 2, :] - xx_ref_pos[node * 2]))
-            legend.append("i: {}".format(node))
-        plt.legend(legend); plt.grid()
-
-        # plot error evolution in distance between agents and their reference positions
-        legend = []
-        plt.figure()
-        plt.title("Error evolution $|e_{i,p_{y}}|$")
-        for node in range(NN):
-            plt.plot(range(T_max), np.abs(xx_pos[node * 2 + 1, :] - xx_ref_pos[node * 2 + 1]))
-            legend.append("i: {}".format(node))
-        plt.legend(legend); plt.grid()
+        pass
+        # # plot error evolution in distance between agents and their reference positions
+        # legend = []
+        # plt.figure()
+        # plt.title("Error evolution $|e_{i,p_{x}}|$")
+        # for node in range(NN):
+        #     plt.plot(range(T_max), np.abs(xx_pos[node * 2, :] - xx_ref_pos[node * 2]))
+        #     legend.append("i: {}".format(node))
+        # plt.legend(legend); plt.grid()
+        #
+        # # plot error evolution in distance between agents and their reference positions
+        # legend = []
+        # plt.figure()
+        # plt.title("Error evolution $|e_{i,p_{y}}|$")
+        # for node in range(NN):
+        #     plt.plot(range(T_max), np.abs(xx_pos[node * 2 + 1, :] - xx_ref_pos[node * 2 + 1]))
+        #     legend.append("i: {}".format(node))
+        # plt.legend(legend); plt.grid()
 
 # block_var = False if n_x < 3 else True
 # plt.show(block=block_var)
@@ -117,7 +118,7 @@ if animation: # animation
         for ii in range(NN):
             index_ii =  ii*dd + np.arange(dd)
             xx_ii = xx_tt[index_ii]
-            xx_ref_pos_ii = xx_ref_pos[index_ii]
+            # xx_ref_pos_ii = xx_ref_pos[index_ii]
             plt.plot(xx_ii[0],xx_ii[1], marker='o', markersize=15, fillstyle='none', color = 'tab:red')
             if moving_leaders:
                 pass
@@ -127,7 +128,7 @@ if animation: # animation
 
         axes_lim = (np.min(xx_pos)-1,np.max(xx_pos)+1)
         plt.xlim(axes_lim); plt.ylim(axes_lim)
-        plt.plot(xx_pos[0:dd*NN:dd,:].T,xx_pos[1:dd*NN:dd,:].T,linestyle="dashed")
+        # plt.plot(xx_pos[0:dd*NN:dd,:].T,xx_pos[1:dd*NN:dd,:].T,linestyle="dashed")
         plt.grid()
         plt.title("Animation of the simulated formation")
         plt.xlabel("$p_x$"); plt.ylabel("$p_y$")

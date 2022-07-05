@@ -53,6 +53,9 @@ class Agent(Node):
         self.current_lett = 0
         self.old_lett = 0
 
+        acc_profile_store = self.get_parameter('acceleration_profile').value
+        self.acc_profile_store = np.array(acc_profile_store).reshape((self.n_leaders, dd, self.max_iters+2))
+
         # create logging file
         self.file_name = "_csv_file/agent_{}.csv".format(self.agent_id)
         self.file_name_pos = "_csv_file_pos/agent_ref_pos{}.csv".format(self.agent_id)
@@ -104,7 +107,7 @@ class Agent(Node):
             # log files
             # 1) visualize on the terminal
             string_for_logger = [round(i,4) for i in msg.data.tolist()[1:]]
-            print("Iter = {} \t Value = {} \t letter = {}".format(int(msg.data[0]), string_for_logger, self.current_lett))
+            print("Iter = {} \t Value = {} \t".format(int(msg.data[0]), string_for_logger))
 
             # 2) save on file
             data_for_csv = msg.data.tolist().copy()

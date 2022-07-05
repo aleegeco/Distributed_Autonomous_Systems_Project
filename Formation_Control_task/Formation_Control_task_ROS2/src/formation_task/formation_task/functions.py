@@ -108,7 +108,7 @@ def update_dynamics(dt: int, self):
     pos_i = x_i[:dd]
     vel_i = x_i[dd:]
     vel_dot_i = np.zeros(dd)
-    w_i = np.ones(dd) * 0.1 # constant input disturbance
+    w_i = np.ones(dd) * 0.3 # constant input disturbance
 
     if self.agent_id < self.n_leaders: # if the considered agent is a leader
         if self.leader_acceleration: # if we impose an acceleration to leaders
@@ -118,10 +118,7 @@ def update_dynamics(dt: int, self):
             x_i = x_i + dt*x_dot_i
 
             for node_j in self.neigh:  # for cycle to empty the buffer even if we're considering leaders, otherwise the algorithm will not continue
-                x_j = np.array(self.received_data[node_j].pop(0)[1:])
-                # vel_j = x_j[dd:]
-                # index_i = node_j * dd + np.arange(dd)
-                # self.store_acc[index_i, self.tt] = vel_j  # store neighbors velocities to compute their derivatives
+                _ = np.array(self.received_data[node_j].pop(0)[1:])
         else: # otherwise, the leader remains still
             x_i = x_i
             for node_j in self.neigh:  # for cycle to empty the buffer even if we're considering leaders,
@@ -148,18 +145,18 @@ def update_dynamics(dt: int, self):
                 vel_dot_i += - np.linalg.inv(K_i)@(Pg_ij @ (self.k_p * (pos_i - pos_j) \
                                                               + self.k_v * (vel_i - vel_j) - vel_dot_j))
                 if self.integral_action: # if we want to apply the integral term
-                    err_pos_ij = self.error_pos[self.agent_id, node_j, :]
+                    int_term = saturation(self, node_j)
                     pos_dot_i = vel_i
                     vel_dot_i += - np.linalg.inv(K_i)@(Pg_ij@(self.k_p*(pos_i - pos_j) \
-                                            + self.k_v*(vel_i - vel_j)+ self.k_i*err_pos_ij - vel_dot_j)) + w_i
+                                            + self.k_v*(vel_i - vel_j)+ int_term - vel_dot_j)) + w_i
             else:
                 pos_dot_i = vel_i
                 vel_dot_i += - Pg_ij@(self.k_p*(pos_i - pos_j) + self.k_v*(vel_i - vel_j))
 
                 if self.integral_action: # if we want to apply the integral term
-                    err_pos_ij = self.error_pos[self.agent_id, node_j, :]
+                    int_term = saturation(self, node_j)
                     pos_dot_i = vel_i
-                    vel_dot_i += - (Pg_ij@(self.k_p*(pos_i - pos_j) + self.k_v*(vel_i - vel_j)+ self.k_i*err_pos_ij)) + w_i
+                    vel_dot_i += - (Pg_ij@(self.k_p*(pos_i - pos_j) + self.k_v*(vel_i - vel_j)+ int_term)) + w_i
 
             x_dot_i = np.concatenate((pos_dot_i, vel_dot_i))
 
@@ -192,3 +189,21 @@ def piecewise_acc(self):
     acc_t = np.ones(dd)*acc_t
     return acc_t
 
+def saturation(self, node_j):
+    n_x = np.shape(self.x_i)[0] # dimension of the state vector
+    dd = n_x//2 # dimension of position and velocity vector
+    err_x = self.k_i*self.error_pos[self.agent_id, node_j, 0]
+    err_y = self.k_i*self.error_pos[self.agent_id, node_j, 1]
+
+    if err_x > self.max_error:
+        err_x = self.max_error
+    if err_x < - self.max_error:
+        err_x = - self.max_error
+
+    if err_y > self.max_error:
+        err_y = self.max_error
+    if err_y < - self.max_error:
+        err_y = - self.max_error
+
+    error = np.array([err_x, err_y]).reshape((dd))
+    return error

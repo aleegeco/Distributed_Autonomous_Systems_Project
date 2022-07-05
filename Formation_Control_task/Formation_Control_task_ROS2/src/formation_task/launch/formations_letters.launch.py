@@ -5,23 +5,24 @@ import numpy as np
 import networkx as nx
 import os
 from ament_index_python.packages import get_package_share_directory
+from roboticstoolbox.tools.trajectory import *
+
 
 
 def generate_launch_description():
-    MAXITERS = 1000
     COMM_TIME = 10e-2 # communication time period
     dd = 2 # dimension of position vector and velocity vector
     n_x = 2*dd # dimension of the single vector x_i
 
     NN = 10
-    n_leaders = NN//2
+    n_leaders = NN//2 - 1
 
     k_p = 1.5 # position gain
     k_v = 3 # velocity gain
     k_i = 0.3 # integral gain
 
 
-    acceleration_leader = False # variable which sets the leaders acceleration
+    acceleration_leader = True # variable which sets the leaders acceleration
     integral_action = False # variable which sets the integral action
     random_init = True # variable which sets randomly the intial conditions
 
@@ -36,8 +37,13 @@ def generate_launch_description():
                   'D':[ [8, 6], [8, 14], [12, 10], [8, 10], [8, 8], [8, 12], [10, 13.47], [11.48, 11.97], [11.48, 8], [10, 6.5]],
                   'S':[[8, 10], [7, 6], [9, 14], [6, 12], [10, 8], [6.57, 10.6], [6.57, 13.42], [9.15, 6.36], [9.15, 9.61], [8, 14]]}
 
-    word = 'DAS'
+    word = 'BBS'
     n_letters = len(word)
+
+    step = 1000
+    MAX_ITERS = step*n_letters
+    transient = 400
+
 
     Pg_stack_word = np.zeros((n_letters, NN, NN, dd, dd))
     Node_pos = np.zeros((n_letters, NN, dd, 1))
@@ -56,14 +62,14 @@ def generate_launch_description():
     # define initial conditions
     xx_init = np.zeros((NN * n_x)).reshape((NN*n_x,1))
     # Impose leaders initial conditions - they must start still
-    for i in range(NN):
-        i_index = n_x*i + np.arange(n_x)
-        if i < n_leaders:
-            xx_init[i_index[:dd]] = Node_pos[0,i,:,:]
-        elif random_init:
+    if random_init:
+        for i in range(NN):
+            i_index = n_x*i + np.arange(n_x)
             xx_init[i_index[:dd]] = 10*np.random.rand(dd).reshape((dd,1))
 
 
+
+    acc_profile_store = acc_profile(n_leaders, n_letters, dd, n_x, MAX_ITERS, transient, step, Node_pos, xx_init).flatten().tolist()
 
     # RVIZ
     # initialization of rviz variables
@@ -92,7 +98,7 @@ def generate_launch_description():
                 executable='agent_lett_i',
                 parameters=[{
                     'agent_id': ii,
-                    'max_iters': MAXITERS,
+                    'max_iters': MAX_ITERS,
                     'communication_time': COMM_TIME,
                     'neigh': N_ii,
                     'xx_init': x_init_ii,
@@ -106,6 +112,7 @@ def generate_launch_description():
                     'node_pos': Node_pos,
                     'leader_acceleration': acceleration_leader,
                     'integral_action': integral_action,
+                    'acceleration_profile' : acc_profile_store
                 }],
                 output='screen',
                 prefix='xterm -title "agent_{}" -hold -e'.format(ii)

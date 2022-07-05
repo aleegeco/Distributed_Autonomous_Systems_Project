@@ -94,6 +94,32 @@ def kron_dynamical_matrix(B: np.array, NN: int, n_leaders: int, k_p: int, k_v: i
     A_kron = np.concatenate((A_kron, np.negative(B_gains)), axis=0)
     return A_kron
 
+def acc_profile(n_leaders: int, n_letters: int, dd: int, n_x: int, MAX_ITERS: int,
+                transient: int, step: int, Node_pos: np.array, xx_init: np.array):
+
+    acc_profile_store = np.zeros((n_leaders, dd, MAX_ITERS+2))
+    for agent in range(n_leaders):
+        for letter in range(n_letters):
+            lin_trans_time = np.linspace(0, transient, transient)
+            index_i = agent*n_x + np.arange(n_x)
+            if letter == 0:
+                pos_x = Node_pos[letter, agent, 0] - xx_init[index_i[0]]
+                pos_y = Node_pos[letter, agent, 1] - xx_init[index_i[1]]
+                quintic_fun_x = quintic(0, 10e3 * pos_x, lin_trans_time)
+                quintic_fun_y = quintic(0, 10e3 * pos_y, lin_trans_time)
+                acc_profile_x = quintic_fun_x.qdd
+                acc_profile_y = quintic_fun_y.qdd
+            else:
+                pos_x = Node_pos[letter, agent, 0] - Node_pos[letter-1, agent, 0]
+                pos_y = Node_pos[letter, agent, 1] - Node_pos[letter-1, agent, 1]
+                quintic_fun_x = quintic(0, 10e3 * pos_x, lin_trans_time)
+                quintic_fun_y = quintic(0, 10e3 * pos_y, lin_trans_time)
+                acc_profile_x = quintic_fun_x.qdd
+                acc_profile_y = quintic_fun_y.qdd
+
+            acc_profile_store[agent, 0, range(letter*step, (letter*step)+transient)] = acc_profile_x
+            acc_profile_store[agent, 1, range(letter*step, (letter * step) + transient)] = acc_profile_y
+    return acc_profile_store
 
 def update_dynamics(dt: int, self):
     # function which update the dynamics of each agent in ROS2, it is computed agent-wise not in compact matrix form
@@ -110,13 +136,15 @@ def update_dynamics(dt: int, self):
     vel_dot_i = np.zeros(dd)
 
     if self.agent_id < self.n_leaders: # if the considered agent is a leader
-        x_i = x_i
-        if self.old_lett != self.current_lett and self.old_lett <= self.n_letters:
-            self.old_lett = self.current_lett
-            x_i[:dd] = self.node_ref_pos[self.current_lett, self.agent_id, :].reshape((dd))
+
+        pos_dot_i = vel_i
+        vel_dot_i = self.acc_profile_store[self.agent_id, :, self.tt]
+
+        x_dot_i = np.concatenate((pos_dot_i, vel_dot_i))
+        x_i += dt*x_dot_i
 
         for node_j in self.neigh:  # for cycle to empty the buffer even if we're considering leaders
-            x_j = np.array(self.received_data[node_j].pop(0)[1:])
+            _ = np.array(self.received_data[node_j].pop(0)[1:])
 
     else: # if we are not leaders we'll enter this else
         if self.leader_acceleration:
@@ -131,9 +159,7 @@ def update_dynamics(dt: int, self):
             index_i = node_j*dd + np.arange(dd)
             self.store_acc[index_i, self.tt] = vel_j  # store the acceleration to compute the derivative
             self.error_pos[self.agent_id, node_j, :] += (pos_i - pos_j)*dt  # increase the sum for the integral term
-            print("Pg_shape",self.Pg_stack_word_ii.shape)
-            print("current lett", self.current_lett)
-            print("node_j", node_j)
+
             Pg_ij = self.Pg_stack_word_ii[self.current_lett, node_j, :, :]  # set the Pg_ij* as a variable to make the code clearer
 
 
@@ -166,14 +192,4 @@ def calc_derivative(self, node_j):
         vel_dot_j = (vel_j_t - vel_j_t_1)/dt # acceleration of neighbor j calculated as v_t - v_(t-1) / dt
     return vel_dot_j
 
-def piecewise_acc(self):
-    # functions used to define a piecewise continuous acceleration for leaders
-    n_x = np.shape(self.x_i)[0]
-    dd = n_x//2
-    time = np.linspace(0, self.max_iters, self.max_iters + 2)
-    tg = quintic(0, 100, time)
-    acc = 500*tg.qdd
-    acc_t = acc[self.tt]
-    acc_t = np.ones(dd)*acc_t
-    return acc_t
 
