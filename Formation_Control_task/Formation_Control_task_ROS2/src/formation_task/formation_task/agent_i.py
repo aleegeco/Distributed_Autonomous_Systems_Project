@@ -140,6 +140,12 @@ class Agent(Node):
                 data_for_csv = ','.join(data_for_csv)
                 writer(self.file_name,data_for_csv+'\n')
 
+                # save data for node ref position
+                data_pos_csv = self.node_ref_pos[self.agent_id, :, :].tolist().copy()
+                data_pos_csv = [str(element) for element in data_pos_csv]
+                data_pos_csv = ','.join(data_pos_csv).replace('[', ' ').replace(']', " ").strip(" ")
+                writer(self.file_name_pos, data_pos_csv + '\n')
+
                 string_for_logger = [round(i,4) for i in msg.data.tolist()[1:]]
                 print("Iter = {} \t Value = {}".format(int(msg.data[0]), string_for_logger))
                 

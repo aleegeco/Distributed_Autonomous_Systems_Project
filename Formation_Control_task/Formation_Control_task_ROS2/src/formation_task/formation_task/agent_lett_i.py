@@ -60,9 +60,9 @@ class Agent(Node):
         self.file_name = "_csv_file/agent_{}.csv".format(self.agent_id)
         self.file_name_pos = "_csv_file_pos/agent_ref_pos{}.csv".format(self.agent_id)
         file = open(self.file_name, "w+") # 'w+' needs to create file and open in writing mode if doesn't exist
-        #file_pos = open(self.file_name_pos, "w+")
+        file_pos = open(self.file_name_pos, "w+")
         file.close()
-        #file_pos.close()
+        file_pos.close()
 
         # initialize subscription dict
         self.subscriptions_list = {}
@@ -116,11 +116,10 @@ class Agent(Node):
             writer(self.file_name, data_for_csv + '\n')
 
             # # 3) csv file for nodes reference positions
-            ## TODO aggiustare con lettere
-            # data_pos_csv = self.node_ref_pos[self.agent_id,:,:].tolist().copy()
-            # data_pos_csv = [str(element) for element in data_pos_csv]
-            # data_pos_csv = ','.join(data_pos_csv).replace('[',' ').replace(']'," ").strip(" ")
-            # writer(self.file_name_pos, data_pos_csv + '\n')
+            data_pos_csv = self.node_ref_pos[self.current_lett,self.agent_id,:,:].tolist().copy()
+            data_pos_csv = [str(element) for element in data_pos_csv]
+            data_pos_csv = ','.join(data_pos_csv).replace('[',' ').replace(']'," ").strip(" ")
+            writer(self.file_name_pos, data_pos_csv + '\n')
 
         else: 
             # Check if lists are nonempty
@@ -145,6 +144,12 @@ class Agent(Node):
                 data_for_csv = [str(round(element,4)) for element in data_for_csv[1:]]
                 data_for_csv = ','.join(data_for_csv)
                 writer(self.file_name,data_for_csv+'\n')
+
+                # csv file for nodes reference positions
+                data_pos_csv = self.node_ref_pos[self.current_lett, self.agent_id, :, :].tolist().copy()
+                data_pos_csv = [str(element) for element in data_pos_csv]
+                data_pos_csv = ','.join(data_pos_csv).replace('[', ' ').replace(']', " ").strip(" ")
+                writer(self.file_name_pos, data_pos_csv + '\n')
 
                 string_for_logger = [round(i,4) for i in msg.data.tolist()[1:]]
                 print("Iter = {} \t Value = {}".format(int(msg.data[0]), string_for_logger))

@@ -195,15 +195,15 @@ def saturation(self, node_j):
     err_x = self.k_i*self.error_pos[self.agent_id, node_j, 0]
     err_y = self.k_i*self.error_pos[self.agent_id, node_j, 1]
 
-    if err_x > self.max_error:
-        err_x = self.max_error
-    if err_x < - self.max_error:
-        err_x = - self.max_error
-
-    if err_y > self.max_error:
-        err_y = self.max_error
-    if err_y < - self.max_error:
-        err_y = - self.max_error
+    # if err_x > self.max_error:
+    #     err_x = self.max_error
+    # if err_x < - self.max_error:
+    #     err_x = - self.max_error
+    #
+    # if err_y > self.max_error:
+    #     err_y = self.max_error
+    # if err_y < - self.max_error:
+    #     err_y = - self.max_error
 
     error = np.array([err_x, err_y]).reshape((dd))
     return error
