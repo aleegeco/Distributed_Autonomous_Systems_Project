@@ -231,7 +231,6 @@ if SAVE:
     np.save('JJ.npy', JJ, allow_pickle=True)
     np.save('dJJ.npy', dJJ, allow_pickle=True)
     np.save('uu.npy',uu, allow_pickle=True)
-    np.save('grad_u.npy',grad_u, allow_pickle=True)
     np.save('yy.npy',yy, allow_pickle=True)
 
 
@@ -241,7 +240,8 @@ plt.plot(range(max_iters-1), (JJ[0,:-1]))
 plt.figure()
 plt.plot(range(max_iters), dJJ[0,:])
 
-plt.figure()
-plt.plot(range(max_iters), grad_u[0, :, -2, 1, :])
+num_evaluation = 500
+result_valid = ValidationFunction(uu[0,-1], x_test_vct, y_test, T, dim_layer)
+Result(result_valid, num_evaluation)
 
 print('DAJE TUTTO OK')

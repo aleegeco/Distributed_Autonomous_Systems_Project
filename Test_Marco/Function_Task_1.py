@@ -33,7 +33,7 @@ def inference_dynamics(xt, ut):
 def forward_pass(uu, x0, T, d):
     """
         input:
-              uu input trajectory: u[0],u[1],..., u[T-1]
+              uu input trajectory: u^k[0],u^k[1],..., u^k[T-1]
               x0 initial condition
               T. number of layers
               d number of neurons
@@ -110,3 +110,73 @@ def cost_function(predicted: np.array, label: int):
     J = (predicted - label) @ (predicted - label).T
     grad_J = 2 * (predicted - label)
     return J, grad_J
+
+
+def ValidationFunction(uu: np.array, VectoryzedImagesTestArray: np.array, LablesTestArray: np.array, T, d,
+                       NumberOfEvaluations, fringe=0.0):
+    """
+        Input:
+            uu : tensor containing the weights of the neural network
+            VectoryzedImagesTestArray : vector containing the vectorized image
+            LablesTestArray : vector containing the lables of the images
+            NumberOfEvaluations : Number of images we want to lable
+            fringe : fringe above which we consider the prediction
+
+        Output:
+            Result : Dictionary containing the number of correct/wrong predictions and False positive/negative
+
+        Dictionary values
+            1 -> the NN predict 1 as lable and the true lable is 1 ( correct lable for 1)
+           -1 -> the NN predict -1 as lable and the true lable is -1 ( correct lable for -1)
+            2 -> the NN predict 1 as lable and the true lable is -1 ( false positive )
+           -2 -> the NN predict -1 as lable and the true lable is 1 ( false negative )
+            0 -> the prediction is under the treshold
+
+    """
+    VectorOfEstimation = np.zeros(NumberOfEvaluations)
+    for i in range(NumberOfEvaluations):
+        xx = forward_pass(uu, VectoryzedImagesTestArray[i], T, d)  # here i move forward the image in the neural network
+        # prediction = np.mean(xx[-1][:])# here i compute the avarege of the resoults of neural network
+        prediction = xx[-1][0]
+
+        if (prediction >= fringe) and (LablesTestArray[i] == 1):  # prediction = 1 , true_lable = 1
+            VectorOfEstimation[i] = 1
+
+        elif (prediction <= -fringe) and (LablesTestArray[i] == -1):  # prediction = -1 , true_lable = -1
+            VectorOfEstimation[i] = -1
+
+        elif ((prediction >= fringe) and (LablesTestArray[i] == -1)):  # prediction = 1 , true_lable = -1
+            VectorOfEstimation[i] = 2
+
+        elif ((prediction <= -fringe) and (LablesTestArray[i] == 1)):
+            VectorOfEstimation[i] = -2
+
+        else:
+            VectorOfEstimation[i] = 0
+
+    unique, counts = np.unique(VectorOfEstimation, return_counts=True)
+    Result_valid = dict(zip(unique, counts))
+    return Result_valid
+
+
+def Result(Dictionary, NumberOfEvaluations):
+    '''
+        Input:
+            Dictionary: contains the number of guesses associated with each category
+            samples: number of samples (images) used for the evaluation
+
+        Categories:(intended as dictionary keys)
+            1 -> the NN predict 1 as lable and the true lable is 1 ( correct lable for 1)
+           -1 -> the NN predict -1 as lable and the true lable is -1 ( correct lable for -1)
+            2 -> the NN predict 1 as lable and the true lable is -1 ( false positive )
+           -2 -> the NN predict -1 as lable and the true lable is 1 ( false negative )
+            0 -> the prediction is under the treshold
+    '''
+    print("The accuracy is {} \n".format(Dictionary[2.0] / samples * 100))
+    print("The false positive {} \n".format(Dictionary[-2.0] / samples * 100))
+    print("The false negative {} \n".format(Dictionary[1.0] / samples))
+    print("The number of times LukyNumber has been identified correctly {} \n".format(Dictionary[1.0] / samples))
+    print("The number of times non LukyNumber has been identified correctly {} \n".format(Dictionary[-1.0] / samples))
+
+
+    return None
