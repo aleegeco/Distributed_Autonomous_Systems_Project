@@ -4,7 +4,7 @@ from sklearn.model_selection import train_test_split
 import matplotlib.pyplot as plt  # this library will be used for data visualization
 import networkx as nx  # library for network creation/visualization/manipulation
 from Function_Task_1 import *
-import pandas as pd
+import os
 # np.random.seed(0)  # generate random number (always the same seed)
 
 PRINT = True
@@ -20,7 +20,7 @@ percent = 0.1  # percentage of data we want to give to our system from all the d
 LuckyNumber = 4
 
 # DEFINITION OF THE BINOMIAL GRAPH
-NN = 5  # number of AGENTS
+NN = 4  # number of AGENTS
 p_ER = 0.3  # spawn edge probability
 I_NN = np.identity(NN, dtype=int)  # necessary to build the Adj
 
@@ -237,8 +237,13 @@ plt.plot(range(max_iters-1), (JJ[0,:-1]))
 plt.figure()
 plt.plot(range(max_iters), dJJ[0,:])
 
-# num_evaluation = 500
-# result_valid = ValidationFunction(uu[0,-1], x_test_vct, y_test, T, dim_layer, num_evaluation)
-# Result(result_valid, num_evaluation)
+num_evaluation = 500
+result_valid = ValidationFunction(uu[0,-1], x_test_vct, y_test, T, dim_layer, num_evaluation)
+Result(result_valid, num_evaluation)
+
+counter = 0
+for label in y_test:
+    if label == 1:
+        counter += 1
 
 print('DAJE TUTTO OK')

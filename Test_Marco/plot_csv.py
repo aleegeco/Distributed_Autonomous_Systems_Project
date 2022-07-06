@@ -7,7 +7,7 @@ max_iters = np.load('store_data/max_iter.npy')
 d = [784, 784, 784, 784]
 T = len(d)  # how much layer we have
 dim_layer = d[0]  # number of neurons considering bias
-NN = np.load('NN.npy')
+NN = np.load('store_data/NN.npy')
 
 
 JJ = np.load('store_data/JJ.npy')
@@ -18,8 +18,6 @@ uu = np.load('store_data/uu.npy')
 print('uu downloaded')
 yy = np.load('store_data/yy.npy')
 print('yy downloaded')
-grad_u = np.load('store_data/grad_u.npy')
-print('grad_u downloaded')
 
 plt.figure()
 for agent in range(NN):
@@ -28,5 +26,11 @@ for agent in range(NN):
 plt.figure()
 for agent in range(NN):
     plt.plot(range(max_iters-1), dJJ_norm[agent, :-1])
+
+nn = 5
+fig, axs = plt.subplots(nn, nn)
+for i in range(nn):
+    for
+
 
 print('DAJE TUTTO OK')

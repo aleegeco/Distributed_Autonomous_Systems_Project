@@ -1,12 +1,6 @@
 import numpy as np
-
-
-def sigmoid_fn(xi):
-    return 1 / (1 + np.exp(-xi))
-
-
-def sigmoid_fn_derivative(xi):
-    return sigmoid_fn(xi) * (1 - sigmoid_fn(xi))
+from ActivationFunctions import tanh as act_function
+from ActivationFunctions import tanh_derivative as der_ac_function
 
 
 # Inference: x_tp = f(xt,ut)
@@ -24,7 +18,7 @@ def inference_dynamics(xt, ut):
     for ell in range(dim_layer):
         temp = xt @ ut[ell, 1:] + ut[ell, 0]  # including the bias
 
-        xtp[ell] = sigmoid_fn(temp)  # x' * u_ell
+        xtp[ell] = act_function(temp)  # x' * u_ell
 
     return xtp
 
@@ -68,7 +62,7 @@ def adjoint_dynamics(ltp, xt, ut, d):
     Delta_ut = np.zeros((d, d + 1))
 
     for j in range(d):
-        dsigma_j = sigmoid_fn_derivative(xt @ ut[j, 1:] + ut[j, 0])
+        dsigma_j = der_ac_function(xt @ ut[j, 1:] + ut[j, 0])
 
         df_dx[:, j] = ut[j, 1:] * dsigma_j
         # df_du[j, XX] = dsigma_j*np.hstack([1,xt])
@@ -172,7 +166,7 @@ def Result(Dictionary, NumberOfEvaluations):
            -2 -> the NN predict -1 as lable and the true lable is 1 ( false negative )
             0 -> the prediction is under the treshold
     '''
-    print("The accuracy is {} \n".format(Dictionary[2.0] / NumberOfEvaluations * 100))
+    print("The accuracy is {} \n".format(Dictionary[1.0] / NumberOfEvaluations * 100))
     print("The false positive {} \n".format(Dictionary[-2.0] / NumberOfEvaluations * 100))
     print("The false negative {} \n".format(Dictionary[1.0] / NumberOfEvaluations))
     print("The number of times LukyNumber has been identified correctly {} \n".format(Dictionary[1.0] / NumberOfEvaluations))
