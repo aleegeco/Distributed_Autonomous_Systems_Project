@@ -150,7 +150,7 @@ grad_u = np.zeros((NN, max_iters, T - 1, dim_layer, dim_layer + 1))  # +1 means 
 
 # force the last layer to have a 1 and 0 ... 0
 # uu[agent, iteration, layer, neuron, neuron + bias]
-uu[:, :, -1, 0] = 1
+uu[:, 0, -1, 1:] = np.zeros((785))
 JJ = np.zeros((NN, max_iters))
 dJJ = np.zeros((NN, max_iters))
 

@@ -27,10 +27,17 @@ plt.figure()
 for agent in range(NN):
     plt.plot(range(max_iters-1), dJJ_norm[agent, :-1])
 
-nn = 5
+nn = 3
 fig, axs = plt.subplots(nn, nn)
+
 for i in range(nn):
-    for
+    for j in range(nn):
+
+        random_node = int(np.random.rand()*(d[1]))
+        random_weight = int(np.random.rand()*(d[1]))
+
+        for agent in range(NN):
+            axs[i,j].plot(range(max_iters-1), uu[agent, :-1, 2 , random_node, random_weight])
 
 
 print('DAJE TUTTO OK')
