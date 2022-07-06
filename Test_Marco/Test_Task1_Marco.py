@@ -25,7 +25,7 @@ p_ER = 0.3  # spawn edge probability
 I_NN = np.identity(NN, dtype=int)  # necessary to build the Adj
 
 # Main ALGORITHM Parameters
-max_iters = 25
+max_iters = 20
 stepsize = 0.1
 
 while 1:
@@ -171,7 +171,6 @@ for agent in range(NN):
         _, lambda_T = cost_function(xx[-1], temp_label)
         JJ_temp, _ = cost_function(xx_test[-1], temp_label_test)
         JJ[agent, 0] += JJ_temp
-        # dJJ_norm[agent, 0] += np.linalg.norm(dJJ_temp)
 
         delta_u = backward_pass(xx, uu[agent, 0], lambda_T, T, dim_layer)
 
@@ -233,17 +232,37 @@ if SAVE:
 
 plt.figure()
 plt.plot(range(max_iters-1), (JJ[0,:-1]))
+plt.title("Cost function over iterations")
+plt.grid()
 
 plt.figure()
 plt.plot(range(max_iters), dJJ[0,:])
+plt.title("Gradient of Cost function")
+plt.grid()
 
 num_evaluation = 500
-result_valid = ValidationFunction(uu[0,-1], x_test_vct, y_test, T, dim_layer, num_evaluation)
-Result(result_valid, num_evaluation)
+# result_valid = ValidationFunction(uu[0,-1], x_test_vct, y_test, T, dim_layer, num_evaluation)
+# Results(result_valid, num_evaluation)
 
-counter = 0
+counter_corr_label = 0
 for label in y_test:
     if label == 1:
-        counter += 1
+        counter_corr_label += 1
 
+correct_predict = 0
+uncorrect_predict = 0
+for image in range(num_evaluation):
+    xx = forward_pass(uu[0,-1], x_test_vct[image,:], T, dim_layer)
+    predict = xx[-1, 0]
+
+    if (predict >= 0) and (y_test[image] == 1):
+        correct_predict += 1
+
+    elif (predict < 0) and (y_test[image] == -1):
+        correct_predict += 1
+    else:
+        uncorrect_predict += 1
+
+accuracy = 100*(correct_predict)/num_evaluation
+print("accuracy {}".format(accuracy))
 print('DAJE TUTTO OK')

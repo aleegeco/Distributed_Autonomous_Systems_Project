@@ -106,7 +106,7 @@ def cost_function(predicted: np.array, label: int):
     return J, grad_J
 
 
-def ValidationFunction(uu: np.array, VectoryzedImagesTestArray: np.array, LablesTestArray: np.array, T, d,
+def ValidationFunction(uu: np.array, VectoryzedImagesTestArray: np.array, LablesTestArray: np.array,
                        NumberOfEvaluations, fringe=0.0):
     """
         Input:
@@ -117,7 +117,7 @@ def ValidationFunction(uu: np.array, VectoryzedImagesTestArray: np.array, Lables
             fringe : fringe above which we consider the prediction
 
         Output:
-            Result : Dictionary containing the number of correct/wrong predictions and False positive/negative
+            Resoult : Dictionary containing the number of correct/wrong predictions and False positive/negative
 
         Dictionary values
             1 -> the NN predict 1 as lable and the true lable is 1 ( correct lable for 1)
@@ -127,33 +127,32 @@ def ValidationFunction(uu: np.array, VectoryzedImagesTestArray: np.array, Lables
             0 -> the prediction is under the treshold
 
     """
-    VectorOfEstimation = np.zeros(NumberOfEvaluations)
+    VectorOfEstimation = -np.ones(NumberOfEvaluations)
     for i in range(NumberOfEvaluations):
-        xx = forward_pass(uu, VectoryzedImagesTestArray[i], T, d)  # here i move forward the image in the neural network
+        xx = forward_pass(uu, VectoryzedImagesTestArray[i])  # here i move forward the image in the neural network
         # prediction = np.mean(xx[-1][:])# here i compute the avarege of the resoults of neural network
         prediction = xx[-1][0]
 
         if (prediction >= fringe) and (LablesTestArray[i] == 1):  # prediction = 1 , true_lable = 1
             VectorOfEstimation[i] = 1
 
-        elif (prediction < -fringe) and (LablesTestArray[i] == -1):  # prediction = -1 , true_lable = -1
+        elif (prediction <= -fringe) and (LablesTestArray[i] == -1):  # prediction = -1 , true_lable = -1
             VectorOfEstimation[i] = -1
 
         elif ((prediction >= fringe) and (LablesTestArray[i] == -1)):  # prediction = 1 , true_lable = -1
             VectorOfEstimation[i] = 2
 
-        elif ((prediction < -fringe) and (LablesTestArray[i] == 1)):
+        elif ((prediction <= -fringe) and (LablesTestArray[i] == 1)):
             VectorOfEstimation[i] = -2
 
         else:
             VectorOfEstimation[i] = 0
 
     unique, counts = np.unique(VectorOfEstimation, return_counts=True)
-    Result_valid = dict(zip(unique, counts))
-    return Result_valid
+    Result = dict(zip(unique, counts))
+    return Result
 
-
-def Result(Dictionary, NumberOfEvaluations):
+def Results(Dictionary, samples):
     '''
         Input:
             Dictionary: contains the number of guesses associated with each category
@@ -166,12 +165,33 @@ def Result(Dictionary, NumberOfEvaluations):
            -2 -> the NN predict -1 as lable and the true lable is 1 ( false negative )
             0 -> the prediction is under the treshold
     '''
-    print("The accuracy is {} \n".format(Dictionary[1.0] / NumberOfEvaluations * 100))
-    print("The false positive {} \n".format(Dictionary[-2.0] / NumberOfEvaluations * 100))
-    print("The false negative {} \n".format(Dictionary[1.0] / NumberOfEvaluations))
-    print("The number of times LukyNumber has been identified correctly {} \n".format(Dictionary[1.0] / NumberOfEvaluations))
-    print("The number of times non LukyNumber has been identified correctly {} \n".format(Dictionary[-1.0] / NumberOfEvaluations))
-    # print("Values under threshold \n".format())
+    if "1.0" in Dictionary.keys():  # to key "1.0" is associated the number of elements of category 1
+        Category1 = Dictionary["1.0"]
+    else:
+        Category1 = 0
 
+    if "-1.0" in Dictionary.keys():  # to key "-1.0" is associated the number of elements of category -1
+        Category2 = Dictionary["-1.0"]
+    else:
+        Category2 = 0
 
-    return None
+    if "2.0" in Dictionary.keys():  # to key "2.0" is associated the number of elements of category 2
+        Category3 = Dictionary["2.0"]
+    else:
+        Category3 = 0
+
+    if "-2.0" in Dictionary.keys():  # to key "-2.0" is associated the number of elements of category -2
+        Category4 = Dictionary["-2.0"]
+    else:
+        Category4 = 0
+
+    if "0.0" in Dictionary.keys():  # to key "0.0" is associated the number of elements of category 0
+        Category5 = Dictionary["-2.0"]
+    else:
+        Category5 = 0
+
+    print("The accuracy is {} % where:\n".format((Category1 + Category2) / samples * 100))  # sum of first and second category expressed in percentage
+    print("\tFalse positives {} \n".format(Category3))  # third category ( false positive)
+    print("\tFalse negatives {} \n".format(Category4))  # fourth category ( false negative)
+    print("\tNumber of times LukyNumber has been identified correctly {}\n".format(Category1))  # first category ( images associated to lable 1 predicted correctly )
+    print("\tNumber of times non LukyNumber has been identified correctly {}\n".format(Category2))  # second category ( images associated to lable -1 predicted correctly
