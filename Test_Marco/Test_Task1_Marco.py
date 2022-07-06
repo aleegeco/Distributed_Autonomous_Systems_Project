@@ -3,7 +3,7 @@ from keras.datasets import mnist
 from sklearn.model_selection import train_test_split
 import matplotlib.pyplot as plt  # this library will be used for data visualization
 import networkx as nx  # library for network creation/visualization/manipulation
-import Function_Task_1
+from Function_Task_1 import *
 
 np.random.seed(0)
 
