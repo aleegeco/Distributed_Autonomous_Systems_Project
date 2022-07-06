@@ -219,7 +219,7 @@ for iter in range(1, max_iters - 1):
 
             JJ_temp, _ = cost_function(xx_test[-1], temp_label_test)
             JJ[agent, iter] += JJ_temp
-            # dJJ_norm[agent, iter] += np.linalg.norm(dJJ_temp)
+            # dJJ[agent, iter] += np.linalg.norm(dJJ_temp)
 
             delta_u = backward_pass(xx, uu[agent, iter], lambda_T, T, dim_layer)
             for layer in range(T - 1):
