@@ -3,22 +3,22 @@ import matplotlib.pyplot as plt  # this library will be used for data visualizat
 
 
 
-max_iters = np.load('max_iter.npy')
+max_iters = np.load('store_data/max_iter.npy')
 d = [784, 784, 784, 784]
 T = len(d)  # how much layer we have
 dim_layer = d[0]  # number of neurons considering bias
 NN = np.load('NN.npy')
 
 
-JJ = np.load('JJ.npy')
+JJ = np.load('store_data/JJ.npy')
 print('JJ downloaded')
-dJJ_norm = np.load('dJJ.npy')
+dJJ_norm = np.load('store_data/dJJ.npy')
 print('dJJ downloaded')
-uu = np.load('uu.npy')
+uu = np.load('store_data/uu.npy')
 print('uu downloaded')
-yy = np.load('yy.npy')
+yy = np.load('store_data/yy.npy')
 print('yy downloaded')
-grad_u = np.load('grad_u.npy')
+grad_u = np.load('store_data/grad_u.npy')
 print('grad_u downloaded')
 
 plt.figure()

@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt  # this library will be used for data visualizat
 import networkx as nx  # library for network creation/visualization/manipulation
 from Function_Task_1 import *
 import pandas as pd
-np.random.seed(0)  # generate random number (always the same seed)
+# np.random.seed(0)  # generate random number (always the same seed)
 
 PRINT = True
 FIGURE = False
@@ -20,12 +20,12 @@ percent = 0.1  # percentage of data we want to give to our system from all the d
 LuckyNumber = 4
 
 # DEFINITION OF THE BINOMIAL GRAPH
-NN = 4  # number of AGENTS
+NN = 5  # number of AGENTS
 p_ER = 0.3  # spawn edge probability
 I_NN = np.identity(NN, dtype=int)  # necessary to build the Adj
 
 # Main ALGORITHM Parameters
-max_iters = 20
+max_iters = 25
 stepsize = 0.1
 
 while 1:
@@ -223,12 +223,12 @@ for iter in range(1, max_iters - 1):
                 uu[agent, iter + 1, layer] += WW[agent, neigh] * uu[neigh, iter, layer]
         dJJ[agent, iter] += (JJ[agent, iter] - JJ[agent, iter-1])/iter
 if SAVE:
-    np.save('max_iter.npy', max_iters, allow_pickle=True)
-    np.save('NN.npy', NN, allow_pickle=True)
-    np.save('JJ.npy', JJ, allow_pickle=True)
-    np.save('dJJ.npy', dJJ, allow_pickle=True)
-    np.save('uu.npy',uu, allow_pickle=True)
-    np.save('yy.npy',yy, allow_pickle=True)
+    np.save('store_data/max_iter.npy', max_iters, allow_pickle=True)
+    np.save('store_data/NN.npy', NN, allow_pickle=True)
+    np.save('store_data/JJ.npy', JJ, allow_pickle=True)
+    np.save('store_data/dJJ.npy', dJJ, allow_pickle=True)
+    np.save('store_data/uu.npy',uu, allow_pickle=True)
+    np.save('store_data/yy.npy',yy, allow_pickle=True)
 
 
 plt.figure()
@@ -237,8 +237,8 @@ plt.plot(range(max_iters-1), (JJ[0,:-1]))
 plt.figure()
 plt.plot(range(max_iters), dJJ[0,:])
 
-num_evaluation = 500
-result_valid = ValidationFunction(uu[0,-1], x_test_vct, y_test, T, dim_layer, num_evaluation)
-Result(result_valid, num_evaluation)
+# num_evaluation = 500
+# result_valid = ValidationFunction(uu[0,-1], x_test_vct, y_test, T, dim_layer, num_evaluation)
+# Result(result_valid, num_evaluation)
 
 print('DAJE TUTTO OK')
