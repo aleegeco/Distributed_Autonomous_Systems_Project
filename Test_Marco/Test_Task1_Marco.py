@@ -24,7 +24,7 @@ p_ER = 0.3  # spawn edge probability
 I_NN = np.identity(NN, dtype=int)  # necessary to build the Adj
 
 # Main ALGORITHM Parameters
-max_iters = 50
+max_iters = 20
 stepsize = 0.1
 
 while 1:
@@ -154,10 +154,12 @@ uu[:,0,:,:,:] = np.random.randn(NN, T-1, dim_layer, dim_layer +1)
 yy = np.zeros((NN, max_iters, T - 1, dim_layer, dim_layer + 1))
 grad_u = np.zeros((NN, max_iters, T - 1, dim_layer, dim_layer + 1))  # +1 means bias
 
-# force the last layer to have a 1ù
+# force the last layer to have a 1 and 0 ... 0
 # uu[agent, iteration, layer, neuron, neuron + bias]
 uu[:, :, -1, 0] = 1
 JJ = np.zeros((NN, max_iters))
+dJJ_norm = np.zeros((NN, max_iters))
+
 
 ## ITERATION 0 - Initialization of Gradient of u
 
@@ -174,8 +176,9 @@ for agent in range(NN):
         xx_test = forward_pass(uu[agent, 0], temp_data_test, T, dim_layer)
 
         _, lambda_T = cost_function(xx[-1], temp_label)
-        JJ_temp, _ = cost_function(xx_test[-1], temp_label_test)
+        JJ_temp, dJJ_temp = cost_function(xx_test[-1], temp_label_test)
         JJ[agent, 0] += JJ_temp
+        dJJ_norm[agent, 0] += dJJ_temp.T@dJJ_temp
 
         delta_u = backward_pass(xx, uu[agent, 0], lambda_T, T, dim_layer)
 
@@ -198,11 +201,13 @@ for iter in range(1, max_iters - 1):
             temp_label_test = label_test[agent, image]
 
             xx = forward_pass(uu[agent, iter], temp_data, T, dim_layer)
-            xx_test = forward_pass(uu[agent, 0], temp_data_test, T, dim_layer)
+            xx_test = forward_pass(uu[agent, iter], temp_data_test, T, dim_layer)
 
             _, lambda_T = cost_function(xx[-1], temp_label)
-            JJ_temp, _ = cost_function(xx_test[-1], temp_label_test)
+
+            JJ_temp, dJ_temp = cost_function(xx_test[-1], temp_label_test)
             JJ[agent, iter] += JJ_temp
+            dJJ_norm[agent, iter] += dJ_temp.T@dJ_temp
 
             delta_u = backward_pass(xx, uu[agent, iter], lambda_T, T, dim_layer)
             for layer in range(T - 1):
@@ -225,5 +230,11 @@ for iter in range(1, max_iters - 1):
 
 
 plt.figure()
-plt.plot(range(max_iters), (JJ[0,:]))
+plt.plot(range(max_iters-1), (JJ[0,:-1]))
+
+plt.figure()
+plt.plot(range(max_iters), dJJ_norm[0,:])
+
+plt.figure()
+plt.plot(range(max_iters), grad_u[0, :, -2, 1, :])
 print('DAJE TUTTO OK')
