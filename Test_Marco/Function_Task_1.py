@@ -1,12 +1,12 @@
 import numpy as np
 
 
-def sigmoid_fn(xi):  # tanh
-    return (np.exp(xi) - np.exp(-xi)) / (np.exp(xi) + np.exp(-xi))
+def sigmoid_fn(xi):
+    return 1 / (1 + np.exp(-xi))
 
 
-def sigmoid_fn_derivative(xi):  # tanh_derivative
-    return (2 / (np.exp(xi) + np.exp(-xi))) ** 2
+def sigmoid_fn_derivative(xi):
+    return sigmoid_fn(xi)*(1-sigmoid_fn(xi))
 
 
 # Inference: x_tp = f(xt,ut)
@@ -14,12 +14,14 @@ def inference_dynamics(xt, ut):
     """
         input:
               xt current state
-              ut current input
+              ut current input - layer
         output:
               xtp next state
     """
-    xtp = np.zeros(d)
-    for ell in range(d):
+    dim_layer = np.shape(ut)[0]
+
+    xtp = np.zeros(dim_layer)
+    for ell in range(dim_layer):
         temp = xt @ ut[ell, 1:] + ut[ell, 0]  # including the bias
 
         xtp[ell] = sigmoid_fn(temp)  # x' * u_ell
@@ -28,11 +30,13 @@ def inference_dynamics(xt, ut):
 
 
 # Forward Propagation
-def forward_pass(uu, x0):
+def forward_pass(uu, x0, T, d):
     """
         input:
               uu input trajectory: u[0],u[1],..., u[T-1]
               x0 initial condition
+              T. number of layers
+              d number of neurons
         output:
               xx state trajectory: x[1],x[2],..., x[T]
     """
@@ -48,7 +52,7 @@ def forward_pass(uu, x0):
 # Adjoint dynamics:
 #   state:    lambda_t = A.T lambda_tp
 #   output: deltau_t = B.T lambda_tp
-def adjoint_dynamics(ltp, xt, ut):
+def adjoint_dynamics(ltp, xt, ut, d):
     """
         input:
               llambda_tp current costate
@@ -80,7 +84,7 @@ def adjoint_dynamics(ltp, xt, ut):
 
 
 # Backward Propagation
-def backward_pass(xx, uu, llambdaT):
+def backward_pass(xx, uu, llambdaT, T, d):
     """
         input:
               xx state trajectory: x[1],x[2],..., x[T]
@@ -90,12 +94,13 @@ def backward_pass(xx, uu, llambdaT):
               llambda costate trajectory
               delta_u costate output, i.e., the loss gradient
     """
+
     llambda = np.zeros((T, d))
     llambda[-1] = llambdaT
 
     Delta_u = np.zeros((T - 1, d, d + 1))
 
     for t in reversed(range(T - 1)):  # T-2,T-1,...,1,0
-        llambda[t], Delta_u[t] = adjoint_dynamics(llambda[t + 1], xx[t], uu[t])
+        llambda[t], Delta_u[t] = adjoint_dynamics(llambda[t + 1], xx[t], uu[t], d)
 
     return Delta_u
