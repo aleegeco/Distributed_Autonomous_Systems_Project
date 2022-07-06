@@ -1,3 +1,4 @@
+import numpy as np
 from keras.datasets import mnist
 from sklearn.model_selection import train_test_split
 import matplotlib.pyplot as plt  # this library will be used for data visualization
@@ -23,7 +24,7 @@ p_ER = 0.3  # spawn edge probability
 I_NN = np.identity(NN, dtype=int)  # necessary to build the Adj
 
 # Main ALGORITHM Parameters
-max_iters = 10
+max_iters = 50
 stepsize = 0.1
 
 while 1:
@@ -149,7 +150,7 @@ dim_layer = d[0]  # number of neurons considering bias
                                     ## ALGORITHM ##
 
 uu = np.zeros((NN, max_iters, T - 1, dim_layer, dim_layer + 1))  # +1 means bias
-# uu[:,0,:,:,:] = np.random.rand(uu[:,0,:,:,:].shape)
+uu[:,0,:,:,:] = np.random.randn(NN, T-1, dim_layer, dim_layer +1)
 yy = np.zeros((NN, max_iters, T - 1, dim_layer, dim_layer + 1))
 grad_u = np.zeros((NN, max_iters, T - 1, dim_layer, dim_layer + 1))  # +1 means bias
 
@@ -161,7 +162,7 @@ JJ = np.zeros((NN, max_iters))
 ## ITERATION 0 - Initialization of Gradient of u
 
 for agent in range(NN):
-    print("Agent {}".format(agent))
+    print("Agent {}, iter = {}".format(agent, 0))
     for image in range(dim_train_agent):
         temp_data = data_point[agent, image, :]
         temp_label = label_point[agent, image]
@@ -173,7 +174,8 @@ for agent in range(NN):
         xx_test = forward_pass(uu[agent, 0], temp_data_test, T, dim_layer)
 
         _, lambda_T = cost_function(xx[-1], temp_label)
-        JJ[agent, 0] += cost_function(xx_test[-1], temp_label_test)
+        JJ_temp, _ = cost_function(xx_test[-1], temp_label_test)
+        JJ[agent, 0] += JJ_temp
 
         delta_u = backward_pass(xx, uu[agent, 0], lambda_T, T, dim_layer)
 
@@ -187,7 +189,7 @@ for agent in range(NN):
 # ALGORITHM STARTING FROM k = 1
 for iter in range(1, max_iters - 1):
     for agent in range(NN):
-        print("Agent {}".format(agent))
+        print("Agent {}, iter = {}".format(agent, iter))
         for image in range(dim_train_agent):
             temp_data = data_point[agent, image, :]
             temp_label = label_point[agent, image]
@@ -199,13 +201,16 @@ for iter in range(1, max_iters - 1):
             xx_test = forward_pass(uu[agent, 0], temp_data_test, T, dim_layer)
 
             _, lambda_T = cost_function(xx[-1], temp_label)
-            JJ[agent, iter] += cost_function(xx_test[-1], temp_label_test)
+            JJ_temp, _ = cost_function(xx_test[-1], temp_label_test)
+            JJ[agent, iter] += JJ_temp
+
             delta_u = backward_pass(xx, uu[agent, iter], lambda_T, T, dim_layer)
             for layer in range(T - 1):
                 grad_u[agent, iter, layer] += delta_u[layer] / (np.shape(temp_data)[0])
 
     ## Gradient Tracking
     for agent in range(NN):
+        print("Agent = {}, Gradient Tracking".format(agent))
         for layer in range(T - 1):
             delta_grad_u = grad_u[agent, iter, layer] - grad_u[agent, iter - 1, layer]
             yy[agent, iter, layer] = WW[agent, agent] * yy[agent, iter - 1, layer] + delta_grad_u
@@ -219,5 +224,6 @@ for iter in range(1, max_iters - 1):
                 uu[agent, iter + 1, layer] += WW[agent, neigh] * uu[neigh, iter, layer]
 
 
-
+plt.figure()
+plt.plot(range(max_iters), (JJ[0,:]))
 print('DAJE TUTTO OK')
