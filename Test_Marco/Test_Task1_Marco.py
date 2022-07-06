@@ -10,6 +10,7 @@ np.random.seed(0)  # generate random number (always the same seed)
 PRINT = True
 FIGURE = False
 RESIZE_DATA = True
+SAVE = True
 
 # Parameters for the data size
 test_set_size = 0.1  # percentage of the test set over the entire data
@@ -19,12 +20,12 @@ percent = 0.1  # percentage of data we want to give to our system from all the d
 LuckyNumber = 4
 
 # DEFINITION OF THE BINOMIAL GRAPH
-NN = 7  # number of AGENTS
+NN = 4  # number of AGENTS
 p_ER = 0.3  # spawn edge probability
 I_NN = np.identity(NN, dtype=int)  # necessary to build the Adj
 
 # Main ALGORITHM Parameters
-max_iters = 20
+max_iters = 30
 stepsize = 0.1
 
 while 1:
@@ -178,7 +179,7 @@ for agent in range(NN):
         _, lambda_T = cost_function(xx[-1], temp_label)
         JJ_temp, dJJ_temp = cost_function(xx_test[-1], temp_label_test)
         JJ[agent, 0] += JJ_temp
-        dJJ_norm[agent, 0] += dJJ_temp.T@dJJ_temp
+        dJJ_norm[agent, 0] += np.linalg.norm(dJJ_temp)
 
         delta_u = backward_pass(xx, uu[agent, 0], lambda_T, T, dim_layer)
 
@@ -205,9 +206,9 @@ for iter in range(1, max_iters - 1):
 
             _, lambda_T = cost_function(xx[-1], temp_label)
 
-            JJ_temp, dJ_temp = cost_function(xx_test[-1], temp_label_test)
+            JJ_temp, dJJ_temp = cost_function(xx_test[-1], temp_label_test)
             JJ[agent, iter] += JJ_temp
-            dJJ_norm[agent, iter] += dJ_temp.T@dJ_temp
+            dJJ_norm[agent, iter] += np.linalg.norm(dJJ_temp)
 
             delta_u = backward_pass(xx, uu[agent, iter], lambda_T, T, dim_layer)
             for layer in range(T - 1):
@@ -218,6 +219,7 @@ for iter in range(1, max_iters - 1):
         print("Agent = {}, Gradient Tracking".format(agent))
         for layer in range(T - 1):
             delta_grad_u = grad_u[agent, iter, layer] - grad_u[agent, iter - 1, layer]
+
             yy[agent, iter, layer] = WW[agent, agent] * yy[agent, iter - 1, layer] + delta_grad_u
 
             for neigh in G.neighbors(agent):
@@ -228,6 +230,13 @@ for iter in range(1, max_iters - 1):
             for neigh in G.neighbors(agent):
                 uu[agent, iter + 1, layer] += WW[agent, neigh] * uu[neigh, iter, layer]
 
+if SAVE:
+    np.savetxt('JJ.csv', JJ.flatten().tolist() , delimiter='::')
+    np.savetxt('dJJ_norm.csv', dJJ_norm.flatten().tolist() , delimiter='::')
+    np.savetxt('uu.csv',uu.flatten().tolist(), delimiter='::')
+    np.savetxt('grad_u.csv',grad_u.flatten().tolist(), delimiter='::')
+    np.savetxt('yy.csv',yy.flatten().tolist(), delimiter='::')
+
 
 plt.figure()
 plt.plot(range(max_iters-1), (JJ[0,:-1]))
@@ -237,4 +246,5 @@ plt.plot(range(max_iters), dJJ_norm[0,:])
 
 plt.figure()
 plt.plot(range(max_iters), grad_u[0, :, -2, 1, :])
+
 print('DAJE TUTTO OK')
