@@ -4,6 +4,8 @@ from sklearn.model_selection import train_test_split
 import matplotlib.pyplot as plt  # this library will be used for data visualization
 import networkx as nx  # library for network creation/visualization/manipulation
 from Function_Task_1 import *
+from imblearn.under_sampling import RandomUnderSampler
+from collections import Counter
 import os
 # np.random.seed(0)  # generate random number (always the same seed)
 
@@ -11,6 +13,7 @@ PRINT = True
 FIGURE = False
 RESIZE_DATA = False
 SAVE = True
+BALANCING = True
 
 # Parameters for the data size
 test_set_size = 0.1  # percentage of the test set over the entire data
@@ -117,6 +120,23 @@ if FIGURE:
 x_train_vct = np.reshape(x_train, (x_train.shape[0], x_train.shape[1] * x_train.shape[2]))
 x_test_vct = np.reshape(x_test, (x_test.shape[0], x_test.shape[1] * x_test.shape[2]))
 
+if BALANCING:
+    rus = RandomUnderSampler()
+    x_train_vct, y_train = rus.fit_resample(x_train_vct, y_train)
+    x_train_vct, _, y_train, _ = train_test_split(x_train_vct, y_train, test_size=0.01)
+
+    print('Resampled dataset shape %s' % Counter(y_train))
+
+    if FIGURE:
+        plt.figure()
+        for i in range(100):
+            plt.subplot(10,10,i+1)
+            plt.xticks([])
+            plt.yticks([])
+            plt.grid(False)
+            plt.imshow(np.reshape(x_train_vct[i], (28, 28)))
+            plt.xlabel(y_train[i])
+        plt.show()
 dim_train_agent = 40  # impose the number of images
 dim_test_agent = 40
 

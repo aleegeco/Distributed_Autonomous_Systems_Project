@@ -37,7 +37,7 @@ for i in range(nn):
         random_weight = int(np.random.rand()*(d[1]))
 
         for agent in range(NN):
-            axs[i,j].plot(range(max_iters-1), uu[agent, :-1, 2 , random_node, random_weight])
+            axs[i,j].plot(range(max_iters-1), uu[agent, :-1, 1 , random_node, random_weight])
 
 
 print('DAJE TUTTO OK')
