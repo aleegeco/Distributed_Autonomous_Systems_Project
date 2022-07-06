@@ -9,7 +9,7 @@ np.random.seed(0)  # generate random number (always the same seed)
 
 PRINT = True
 FIGURE = False
-RESIZE_DATA = True
+RESIZE_DATA = False
 SAVE = True
 
 # Parameters for the data size
@@ -42,8 +42,8 @@ while 1:
         if PRINT: print("Warning, the graph is NOT connected.")
         quit()
 
-#                                       Compute mixing matrices
-#                     Metropolis-Hastings method to obtain a doubly-stochastic matrix
+#  Compute mixing matrices
+#  Metropolis-Hastings method to obtain a doubly-stochastic matrix
 
 WW = np.zeros((NN, NN))
 
@@ -93,13 +93,13 @@ for i in range(0, np.shape(y_train)[0]):
     if y_train[i] == LuckyNumber:
         y_train[i] = 1
     else:
-        y_train[i] = 0
+        y_train[i] = -1
 
 for i in range(0, np.shape(y_test)[0]):
     if y_test[i] == LuckyNumber:
         y_test[i] = 1
     else:
-        y_test[i] = 0
+        y_test[i] = -1
 
 # visualize some images of the dataset with the new labels
 if FIGURE:
@@ -113,7 +113,7 @@ if FIGURE:
         plt.xlabel(y_train[i])
         plt.show()
 
-    # Reshape of the input data from a matrix [28 x 28] to a vector [ 784 x 1 ]
+# Reshape of the input data from a matrix [28 x 28] to a vector [ 784 x 1 ]
 x_train_vct = np.reshape(x_train, (x_train.shape[0], x_train.shape[1] * x_train.shape[2]))
 x_test_vct = np.reshape(x_test, (x_test.shape[0], x_test.shape[1] * x_test.shape[2]))
 
@@ -127,7 +127,6 @@ data_test = np.zeros((NN, dim_test_agent, np.shape(x_test_vct)[1]))
 label_test = np.zeros((NN, dim_test_agent))
 
 # data_validation, label_validation
-
 for agent in range(NN):
     agent_index = agent * dim_train_agent + np.arange(dim_train_agent)
     data_point[agent, :, :] = x_train_vct[agent_index, :]
@@ -143,8 +142,7 @@ d = [784, 784, 784, 784]
 T = len(d)  # how much layer we have
 dim_layer = d[0]  # number of neurons considering bias
 
-                                    ## ALGORITHM ##
-
+## ALGORITHM ##
 uu = np.zeros((NN, max_iters, T - 1, dim_layer, dim_layer + 1))  # +1 means bias
 uu[:,0,:,:,:] = np.random.randn(NN, T-1, dim_layer, dim_layer +1)
 yy = np.zeros((NN, max_iters, T - 1, dim_layer, dim_layer + 1))
@@ -158,7 +156,6 @@ dJJ = np.zeros((NN, max_iters))
 
 
 ## ITERATION 0 - Initialization of Gradient of u
-
 for agent in range(NN):
     print("Agent {}, iter = {}".format(agent, 0))
     for image in range(dim_train_agent):
@@ -241,7 +238,7 @@ plt.figure()
 plt.plot(range(max_iters), dJJ[0,:])
 
 num_evaluation = 500
-result_valid = ValidationFunction(uu[0,-1], x_test_vct, y_test, T, dim_layer)
+result_valid = ValidationFunction(uu[0,-1], x_test_vct, y_test, T, dim_layer, num_evaluation)
 Result(result_valid, num_evaluation)
 
 print('DAJE TUTTO OK')

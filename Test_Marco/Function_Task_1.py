@@ -142,13 +142,13 @@ def ValidationFunction(uu: np.array, VectoryzedImagesTestArray: np.array, Lables
         if (prediction >= fringe) and (LablesTestArray[i] == 1):  # prediction = 1 , true_lable = 1
             VectorOfEstimation[i] = 1
 
-        elif (prediction <= -fringe) and (LablesTestArray[i] == -1):  # prediction = -1 , true_lable = -1
+        elif (prediction < -fringe) and (LablesTestArray[i] == -1):  # prediction = -1 , true_lable = -1
             VectorOfEstimation[i] = -1
 
         elif ((prediction >= fringe) and (LablesTestArray[i] == -1)):  # prediction = 1 , true_lable = -1
             VectorOfEstimation[i] = 2
 
-        elif ((prediction <= -fringe) and (LablesTestArray[i] == 1)):
+        elif ((prediction < -fringe) and (LablesTestArray[i] == 1)):
             VectorOfEstimation[i] = -2
 
         else:
@@ -172,11 +172,12 @@ def Result(Dictionary, NumberOfEvaluations):
            -2 -> the NN predict -1 as lable and the true lable is 1 ( false negative )
             0 -> the prediction is under the treshold
     '''
-    print("The accuracy is {} \n".format(Dictionary[2.0] / samples * 100))
-    print("The false positive {} \n".format(Dictionary[-2.0] / samples * 100))
-    print("The false negative {} \n".format(Dictionary[1.0] / samples))
-    print("The number of times LukyNumber has been identified correctly {} \n".format(Dictionary[1.0] / samples))
-    print("The number of times non LukyNumber has been identified correctly {} \n".format(Dictionary[-1.0] / samples))
+    print("The accuracy is {} \n".format(Dictionary[2.0] / NumberOfEvaluations * 100))
+    print("The false positive {} \n".format(Dictionary[-2.0] / NumberOfEvaluations * 100))
+    print("The false negative {} \n".format(Dictionary[1.0] / NumberOfEvaluations))
+    print("The number of times LukyNumber has been identified correctly {} \n".format(Dictionary[1.0] / NumberOfEvaluations))
+    print("The number of times non LukyNumber has been identified correctly {} \n".format(Dictionary[-1.0] / NumberOfEvaluations))
+    # print("Values under threshold \n".format())
 
 
     return None

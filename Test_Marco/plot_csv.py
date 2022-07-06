@@ -29,8 +29,4 @@ plt.figure()
 for agent in range(NN):
     plt.plot(range(max_iters-1), dJJ_norm[agent, :-1])
 
-# plt.figure()
-# plt.plot(range(max_iters), grad_u[0, :, -2, 1, :])
-# plt.show()
-
 print('DAJE TUTTO OK')
