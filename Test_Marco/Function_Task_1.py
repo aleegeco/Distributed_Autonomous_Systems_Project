@@ -6,7 +6,7 @@ def sigmoid_fn(xi):
 
 
 def sigmoid_fn_derivative(xi):
-    return sigmoid_fn(xi)*(1-sigmoid_fn(xi))
+    return sigmoid_fn(xi) * (1 - sigmoid_fn(xi))
 
 
 # Inference: x_tp = f(xt,ut)
@@ -104,3 +104,9 @@ def backward_pass(xx, uu, llambdaT, T, d):
         llambda[t], Delta_u[t] = adjoint_dynamics(llambda[t + 1], xx[t], uu[t], d)
 
     return Delta_u
+
+
+def cost_function(predicted: np.array, label: int):
+    J = (predicted - label) @ (predicted - label).T
+    grad_J = 2 * (predicted - label)
+    return J, grad_J
