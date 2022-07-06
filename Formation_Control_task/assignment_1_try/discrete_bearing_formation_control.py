@@ -1,22 +1,36 @@
-from Formation_Control_task.Formation_Control_task_ROS2.src.formation_task.formation_task.functions import *
+import numpy as np
+import networkx as nx
+import control as ctrl
+import matplotlib.pyplot as plt
+from functions import *
 
-# Plot Settings - to impose usage of LaTeX as text renderer
 FIGURE = True
-
+# graph is time-varying, but let's build the simplest case to try the algorithm and then move forward
 NN = 4  # number of agents
 dd = 2  # dimension of the pos/vel vector (2-dimensional or 3-dimension motion)
 n_leaders = 2  # number of leaders
 p_ER = 0.9
 n_follower = NN - n_leaders  # number of followers
 
-dt = 10e-4 # discretization step
-T_max = 100  # max simulation time
+dt = 0.1  # discretion step
+T_max = 50  # tempo massimo simulation
 horizon = np.linspace(0.0, T_max, int(T_max / dt))
-max_iter = 500  # max number of iterations
+max_iter = 500  # number of iterations
 
 # gain parameters
+
 k_p = 0.7
 k_v = 1.5
+
+p_plus = np.zeros((dd * NN, 1, len(horizon)))
+v_plus = np.zeros((dd * NN, 1, len(horizon)))
+
+p_plus[:, :, 0] = np.random.rand((dd * NN)).reshape(
+    [dd * NN, 1])  # random initial conditions for position of all the agents
+v_plus[:, :, 0] = np.random.rand((dd * NN)).reshape(
+    [dd * NN, 1])  # random initial conditions for velocities of all the agents
+
+# B = np.zeros((d * NN, d * NN))  # Initialization of Bearing Laplacian
 
 Node_pos = np.zeros((NN, dd, 1))  # it stores all the vector position for each node
 # it is a tensor with NN matrix of dimension (dxd)
@@ -40,13 +54,16 @@ Node_pos[3, :, :] = np.array([
     [5, 1]
 ]).T
 
-# Graph and Adjacency matrix
+# we impose the leaders positions
+p_plus[[0, 1], :, 0] = Node_pos[0, :, :]
+p_plus[[2, 3], :, 0] = Node_pos[1, :, :]
+
+# Pg_ij is always the same, but the Matrix B is computed according to the Adjacency Matrix of the graph
 G = nx.binomial_graph(NN, p_ER)
+
 Adj = nx.to_numpy_array(G)
 
-# Stack of all Pg_ij
 Pg_stack = proj_stack(Node_pos, NN, dd)
-# Bearing Laplacian Matrix
 B = bearing_laplacian(Pg_stack, Adj, dd)
 
 if FIGURE:
@@ -54,34 +71,42 @@ if FIGURE:
     nx.draw(G, with_labels=True)
     plt.show()
 
-### TEST ###
-
 Bff = B[dd * n_leaders:dd * NN, dd * n_leaders:dd * NN]
 Bfl = B[dd * n_leaders:dd * NN, :dd * n_leaders]
 
-pos_leaders = Node_pos[[0, 1], :, :].reshape([4, 1])
+pos_leader = Node_pos[[0, 1], :, :].reshape([4, 1])
 if np.linalg.det(Bff) != 0:
     print("The matrix Bff is not singular")
-    pf_star = - np.linalg.inv(Bff) @ Bfl @ pos_leaders
+    pf_star = - np.linalg.inv(Bff) @ Bfl @ pos_leader
 else:
     print("The matrix Bff is singular! Check the Graph")
-###
 
-
-## Initialization of state vector, reference vector and init vector
 xx = np.zeros((NN * dd * 2, len(horizon)))
 xx_star = np.zeros((NN * dd * 2, len(horizon)))
-xx_init = np.zeros((NN * 2 * dd, 1))
 
-# Kroenecker Function of the dynamic
-A_kron = kron_dynamical_matrix(B, NN, n_leaders, k_p, k_v, dd)
-
-# We impose the leaders position
 for i in range(NN):
     for j in range(dd):
         xx_star[(n_leaders * i) + j] = Node_pos[i, j, :]
 
-### ???? Non l'hai già fatto prima?
+# test to create the big matrix to define x_dot = A x
+zeros_nl_2NN = np.zeros((n_leaders, 2 * NN))
+zeros_nf_NN = np.zeros((n_follower, NN + n_leaders))
+I_nf = np.identity(n_follower, dtype=int)
+I_d = np.identity(dd, dtype=int)
+
+A = np.concatenate((zeros_nf_NN, I_nf), axis=1)
+A = np.concatenate((zeros_nl_2NN, A), axis=0)
+A = np.concatenate((A, zeros_nl_2NN), axis=0)
+
+# adding the Kp and Kv
+
+temp = np.concatenate((Bfl * k_p, Bff * k_p, Bfl * k_v, Bff * k_v), axis=1)
+
+A_kron = np.kron(A, I_d)
+
+A_kron = np.concatenate((A_kron, np.negative(temp)), axis=0)
+xx_init = np.zeros((NN * 2 * dd, 1))
+
 for i in range(n_leaders):
     for j in range(dd):
         xx_init[(n_leaders * i) + j] = Node_pos[i, j, :]
@@ -89,37 +114,23 @@ for i in range(n_leaders):
 xx[:, 0] = xx_init.reshape(16)
 
 for tt in range(len(horizon) - 1):
-    xx[:, tt+1] = xx[:, tt] + dt*(A_kron @ xx[:, tt])
-
+    xx[:, tt + 1] = xx[:, tt] + dt * (A_kron @ xx[:, tt])
 if FIGURE:
-    fig2 = plt.figure(2)
-    plt.title("Evolution of $p_y$")
-    plt.xlabel("time")
-    plt.ylabel("$p_y$")
-    plt.grid(visible=True)
+    plt.figure(2)
     for i in range(NN):
         plt.plot(horizon, xx[i * 2, :])
         plt.plot(horizon, xx_star[i * 2, :], "r--", linewidth=0.5)
 
-    fig3 = plt.figure(3)
-    plt.title("Evolution of $p_x$")
-    plt.xlabel("time")
-    plt.ylabel("$p_x$")
-    plt.grid(visible=True)
+    plt.figure(3)
+
     for i in range(NN):
         plt.plot(horizon, xx[i * 2 + 1, :])
         plt.plot(horizon, xx_star[i * 2 + 1, :], "r--", linewidth=0.5)
 
-    fig4 = plt.figure(4)
-    plt.title("Evolution of Nodes position in XY-plane")
-    plt.xlabel("$p_x$")
-    plt.ylabel("$p_y$")
-    plt.grid(visible=True)
+    plt.figure(4)
+
     for i in range(NN):
         plt.plot(xx[i * 2, :], xx[i * 2 + 1, :], "r--", linewidth=0.5)
-        if i < n_leaders:
-            plt.plot(xx[i * 2, len(horizon) - 1], xx[i * 2 + 1, len(horizon) - 1], "ro")  # leaders in red
-        else:
-            plt.plot(xx[i * 2, len(horizon) - 1], xx[i * 2 + 1, len(horizon) - 1], "bo") # followers in blue
+        plt.plot(xx[i * 2, len(horizon) - 1], xx[i * 2 + 1, len(horizon) - 1], "ro")
 
 print("DAJE TUTTO OK")

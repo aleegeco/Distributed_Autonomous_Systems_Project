@@ -1,12 +1,6 @@
 import numpy as np
-
-
-def sigmoid_fn(xi):
-    return 1 / (1 + np.exp(-xi))
-
-
-def sigmoid_fn_derivative(xi):
-    return sigmoid_fn(xi)*(1-sigmoid_fn(xi))
+from ActivationFunctions import tanh as act_function
+from ActivationFunctions import tanh_derivative as der_ac_function
 
 
 # Inference: x_tp = f(xt,ut)
@@ -24,7 +18,7 @@ def inference_dynamics(xt, ut):
     for ell in range(dim_layer):
         temp = xt @ ut[ell, 1:] + ut[ell, 0]  # including the bias
 
-        xtp[ell] = sigmoid_fn(temp)  # x' * u_ell
+        xtp[ell] = act_function(temp)  # x' * u_ell
 
     return xtp
 
@@ -33,7 +27,7 @@ def inference_dynamics(xt, ut):
 def forward_pass(uu, x0, T, d):
     """
         input:
-              uu input trajectory: u[0],u[1],..., u[T-1]
+              uu input trajectory: u^k[0],u^k[1],..., u^k[T-1]
               x0 initial condition
               T. number of layers
               d number of neurons
@@ -68,7 +62,7 @@ def adjoint_dynamics(ltp, xt, ut, d):
     Delta_ut = np.zeros((d, d + 1))
 
     for j in range(d):
-        dsigma_j = sigmoid_fn_derivative(xt @ ut[j, 1:] + ut[j, 0])
+        dsigma_j = der_ac_function(xt @ ut[j, 1:] + ut[j, 0])
 
         df_dx[:, j] = ut[j, 1:] * dsigma_j
         # df_du[j, XX] = dsigma_j*np.hstack([1,xt])
@@ -104,3 +98,100 @@ def backward_pass(xx, uu, llambdaT, T, d):
         llambda[t], Delta_u[t] = adjoint_dynamics(llambda[t + 1], xx[t], uu[t], d)
 
     return Delta_u
+
+
+def cost_function(predicted: np.array, label: int):
+    J = (predicted - label) @ (predicted - label).T
+    grad_J = 2 * (predicted - label)
+    return J, grad_J
+
+
+def ValidationFunction(uu: np.array, VectoryzedImagesTestArray: np.array, LablesTestArray: np.array,
+                       NumberOfEvaluations, fringe=0.0):
+    """
+        Input:
+            uu : tensor containing the weights of the neural network
+            VectoryzedImagesTestArray : vector containing the vectorized image
+            LablesTestArray : vector containing the lables of the images
+            NumberOfEvaluations : Number of images we want to lable
+            fringe : fringe above which we consider the prediction
+
+        Output:
+            Resoult : Dictionary containing the number of correct/wrong predictions and False positive/negative
+
+        Dictionary values
+            1 -> the NN predict 1 as lable and the true lable is 1 ( correct lable for 1)
+           -1 -> the NN predict -1 as lable and the true lable is -1 ( correct lable for -1)
+            2 -> the NN predict 1 as lable and the true lable is -1 ( false positive )
+           -2 -> the NN predict -1 as lable and the true lable is 1 ( false negative )
+            0 -> the prediction is under the treshold
+
+    """
+    VectorOfEstimation = -np.ones(NumberOfEvaluations)
+    for i in range(NumberOfEvaluations):
+        xx = forward_pass(uu, VectoryzedImagesTestArray[i])  # here i move forward the image in the neural network
+        # prediction = np.mean(xx[-1][:])# here i compute the avarege of the resoults of neural network
+        prediction = xx[-1][0]
+
+        if (prediction >= fringe) and (LablesTestArray[i] == 1):  # prediction = 1 , true_lable = 1
+            VectorOfEstimation[i] = 1
+
+        elif (prediction <= -fringe) and (LablesTestArray[i] == -1):  # prediction = -1 , true_lable = -1
+            VectorOfEstimation[i] = -1
+
+        elif ((prediction >= fringe) and (LablesTestArray[i] == -1)):  # prediction = 1 , true_lable = -1
+            VectorOfEstimation[i] = 2
+
+        elif ((prediction <= -fringe) and (LablesTestArray[i] == 1)):
+            VectorOfEstimation[i] = -2
+
+        else:
+            VectorOfEstimation[i] = 0
+
+    unique, counts = np.unique(VectorOfEstimation, return_counts=True)
+    Result = dict(zip(unique, counts))
+    return Result
+
+def Results(Dictionary, samples):
+    '''
+        Input:
+            Dictionary: contains the number of guesses associated with each category
+            samples: number of samples (images) used for the evaluation
+
+        Categories:(intended as dictionary keys)
+            1 -> the NN predict 1 as lable and the true lable is 1 ( correct lable for 1)
+           -1 -> the NN predict -1 as lable and the true lable is -1 ( correct lable for -1)
+            2 -> the NN predict 1 as lable and the true lable is -1 ( false positive )
+           -2 -> the NN predict -1 as lable and the true lable is 1 ( false negative )
+            0 -> the prediction is under the treshold
+    '''
+    if "1.0" in Dictionary.keys():  # to key "1.0" is associated the number of elements of category 1
+        Category1 = Dictionary["1.0"]
+    else:
+        Category1 = 0
+
+    if "-1.0" in Dictionary.keys():  # to key "-1.0" is associated the number of elements of category -1
+        Category2 = Dictionary["-1.0"]
+    else:
+        Category2 = 0
+
+    if "2.0" in Dictionary.keys():  # to key "2.0" is associated the number of elements of category 2
+        Category3 = Dictionary["2.0"]
+    else:
+        Category3 = 0
+
+    if "-2.0" in Dictionary.keys():  # to key "-2.0" is associated the number of elements of category -2
+        Category4 = Dictionary["-2.0"]
+    else:
+        Category4 = 0
+
+    if "0.0" in Dictionary.keys():  # to key "0.0" is associated the number of elements of category 0
+        Category5 = Dictionary["-2.0"]
+    else:
+        Category5 = 0
+
+    print("The accuracy is {} % where:\n".format((Category1 + Category2) / samples * 100))  # sum of first and second category expressed in percentage
+    print("\tFalse positives {} \n".format(Category3))  # third category ( false positive)
+    print("\tFalse negatives {} \n".format(Category4))  # fourth category ( false negative)
+    print("\tNumber of times LukyNumber has been identified correctly {}\n".format(Category1))  # first category ( images associated to lable 1 predicted correctly )
+    print("\tNumber of times non LukyNumber has been identified correctly {}\n".format(Category2))  # second category ( images associated to lable -1 predicted correctly

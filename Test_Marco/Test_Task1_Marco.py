@@ -1,14 +1,19 @@
+import numpy as np
 from keras.datasets import mnist
 from sklearn.model_selection import train_test_split
 import matplotlib.pyplot as plt  # this library will be used for data visualization
 import networkx as nx  # library for network creation/visualization/manipulation
 from Function_Task_1 import *
-
-np.random.seed(0) # generate random number (always the same seed)
+from imblearn.under_sampling import RandomUnderSampler
+from collections import Counter
+import os
+# np.random.seed(0)  # generate random number (always the same seed)
 
 PRINT = True
 FIGURE = False
-RESIZE_DATA = True
+RESIZE_DATA = False
+SAVE = True
+BALANCING = True
 
 # Parameters for the data size
 test_set_size = 0.1  # percentage of the test set over the entire data
@@ -18,14 +23,13 @@ percent = 0.1  # percentage of data we want to give to our system from all the d
 LuckyNumber = 4
 
 # DEFINITION OF THE BINOMIAL GRAPH
-NN = 7  # number of AGENTS
+NN = 4  # number of AGENTS
 p_ER = 0.3  # spawn edge probability
 I_NN = np.identity(NN, dtype=int)  # necessary to build the Adj
 
 # Main ALGORITHM Parameters
-max_iters = 10
+max_iters = 20
 stepsize = 0.1
-
 
 while 1:
     Adj = np.random.binomial(1, p_ER, (NN, NN))  # create a NN x NN matrix with random connections
@@ -41,8 +45,8 @@ while 1:
         if PRINT: print("Warning, the graph is NOT connected.")
         quit()
 
-#                                       Compute mixing matrices
-#                     Metropolis-Hastings method to obtain a doubly-stochastic matrix
+#  Compute mixing matrices
+#  Metropolis-Hastings method to obtain a doubly-stochastic matrix
 
 WW = np.zeros((NN, NN))
 
@@ -77,7 +81,7 @@ y_test = y_test.astype(np.int8)
 x_train = x_train / 255
 x_test = x_test / 255
 
-#Reducing the datas if required
+# Reducing the datas if required
 if RESIZE_DATA:
     x_total_temp = np.append(x_train, x_test, axis=0)
     x_total = x_total_temp[0: int(np.shape(x_total_temp)[0] * percent)]
@@ -102,9 +106,9 @@ for i in range(0, np.shape(y_test)[0]):
 
 # visualize some images of the dataset with the new labels
 if FIGURE:
-    plt.figure(figsize=(10,10))
+    plt.figure(figsize=(10, 10))
     for i in range(25):
-        plt.subplot(5,5,i+1)
+        plt.subplot(5, 5, i + 1)
         plt.xticks([])
         plt.yticks([])
         plt.grid(False)
@@ -112,18 +116,28 @@ if FIGURE:
         plt.xlabel(y_train[i])
         plt.show()
 
+# Reshape of the input data from a matrix [28 x 28] to a vector [ 784 x 1 ]
+x_train_vct = np.reshape(x_train, (x_train.shape[0], x_train.shape[1] * x_train.shape[2]))
+x_test_vct = np.reshape(x_test, (x_test.shape[0], x_test.shape[1] * x_test.shape[2]))
 
-    # Reshape of the input data from a matrix [28 x 28] to a vector [ 784 x 1 ]
-x_train_vct = np.reshape(x_train, (x_train.shape[0], x_train.shape[1]*x_train.shape[2]))
-x_test_vct = np.reshape(x_test, (x_test.shape[0], x_test.shape[1]*x_test.shape[2]))
+if BALANCING:
+    rus = RandomUnderSampler()
+    x_train_vct, y_train = rus.fit_resample(x_train_vct, y_train)
+    x_train_vct, _, y_train, _ = train_test_split(x_train_vct, y_train, test_size=0.01)
 
+    print('Resampled dataset shape %s' % Counter(y_train))
 
-# MANCA LA PARTE DI BILANCIAMENTO DEL DATASET
-## We split the dataset for each agent
-# dim_train_agent = np.shape(x_train_vct)[0]//NN
-# dim_test_agent = np.shape(x_test_vct)[0]//NN
-
-dim_train_agent = 40 # impose the number of images
+    if FIGURE:
+        plt.figure()
+        for i in range(100):
+            plt.subplot(10,10,i+1)
+            plt.xticks([])
+            plt.yticks([])
+            plt.grid(False)
+            plt.imshow(np.reshape(x_train_vct[i], (28, 28)))
+            plt.xlabel(y_train[i])
+        plt.show()
+dim_train_agent = 40  # impose the number of images
 dim_test_agent = 40
 
 data_point = np.zeros((NN, dim_train_agent, np.shape(x_train_vct)[1]))
@@ -131,37 +145,39 @@ label_point = np.zeros((NN, dim_train_agent))
 
 data_test = np.zeros((NN, dim_test_agent, np.shape(x_test_vct)[1]))
 label_test = np.zeros((NN, dim_test_agent))
-## data_validation, label_validation
 
-
+# data_validation, label_validation
 for agent in range(NN):
-    agent_index = agent*dim_train_agent + np.arange(dim_train_agent)
+    agent_index = agent * dim_train_agent + np.arange(dim_train_agent)
     data_point[agent, :, :] = x_train_vct[agent_index, :]
     label_point[agent, :] = y_train[agent_index]
 
-    agent_index = agent*dim_test_agent + np.arange(dim_test_agent)
+    agent_index = agent * dim_test_agent + np.arange(dim_test_agent)
     data_test[agent, :, :] = x_test_vct[agent_index, :]
     label_test[agent, :] = y_test[agent_index]
 
-## Set Up the Neural Network
+#  Set Up the Neural Network
+
 d = [784, 784, 784, 784]
-T = len(d) # how much layer we have
-dim_layer = d[0] # number of neurons considering bias
+T = len(d)  # how much layer we have
+dim_layer = d[0]  # number of neurons considering bias
+
 ## ALGORITHM ##
+uu = np.zeros((NN, max_iters, T - 1, dim_layer, dim_layer + 1))  # +1 means bias
+uu[:,0,:,:,:] = np.random.randn(NN, T-1, dim_layer, dim_layer +1)
+yy = np.zeros((NN, max_iters, T - 1, dim_layer, dim_layer + 1))
+grad_u = np.zeros((NN, max_iters, T - 1, dim_layer, dim_layer + 1))  # +1 means bias
 
-uu = np.zeros((NN, max_iters, T-1, dim_layer, dim_layer + 1)) # +1 means bias
-#uu[:,0,:,:,:] = np.random.rand(uu[:,0,:,:,:].shape)
-yy = np.zeros((NN, max_iters, T-1, dim_layer, dim_layer + 1))
-grad_u = np.zeros((NN, max_iters, T-1, dim_layer, dim_layer + 1)) # +1 means bias
-
-# force the last layer to have a 1ù
-#uu[agent, iteration, layer, neuron, neuron + bias]
-uu[:,:,-1, 0] = 1
+# force the last layer to have a 1 and 0 ... 0
+# uu[agent, iteration, layer, neuron, neuron + bias]
+uu[:, 0, -1, 1:] = np.zeros((785))
 JJ = np.zeros((NN, max_iters))
+dJJ = np.zeros((NN, max_iters))
+
 
 ## ITERATION 0 - Initialization of Gradient of u
 for agent in range(NN):
-    print("Agent {}".format(agent))
+    print("Agent {}, iter = {}".format(agent, 0))
     for image in range(dim_train_agent):
         temp_data = data_point[agent, image, :]
         temp_label = label_point[agent, image]
@@ -170,48 +186,103 @@ for agent in range(NN):
         temp_label_test = label_test[agent, image]
 
         xx = forward_pass(uu[agent, 0], temp_data, T, dim_layer)
-        # xx_test = forward_pass(uu[agent, 0], temp_data_test, T, dim_layer)
+        xx_test = forward_pass(uu[agent, 0], temp_data_test, T, dim_layer)
 
-        lambda_T = 2 * (xx[-1] - temp_label)
-        # JJ[agent, 0] += (pred_test - temp_label_test) @ (pred_test - temp_label_test).T
+        _, lambda_T = cost_function(xx[-1], temp_label)
+        JJ_temp, _ = cost_function(xx_test[-1], temp_label_test)
+        JJ[agent, 0] += JJ_temp
 
         delta_u = backward_pass(xx, uu[agent, 0], lambda_T, T, dim_layer)
 
-        for layer in range(T-1):
+        for layer in range(T - 1):
             grad_u[agent, 0, layer] += delta_u[layer] / (np.shape(temp_data)[0])
             yy[agent, 0, layer] += delta_u[layer] / (np.shape(temp_data)[0])
 
-    for layer in range(T-1):
-        uu[agent, 1, layer] += WW[agent, agent]*uu[agent, 0, layer] - stepsize*grad_u[agent, 0, layer]
-
+    for layer in range(T - 1):
+        uu[agent, 1, layer] += WW[agent, agent] * uu[agent, 0, layer] - stepsize * grad_u[agent, 0, layer]
 
 # ALGORITHM STARTING FROM k = 1
-for iter in range(1, max_iters-1):
+for iter in range(1, max_iters - 1):
     for agent in range(NN):
-        print("Agent {}".format(agent))
+        print("Agent {}, iter = {}".format(agent, iter))
         for image in range(dim_train_agent):
             temp_data = data_point[agent, image, :]
             temp_label = label_point[agent, image]
 
-            xx = forward_pass(uu[agent, iter], temp_data, T, dim_layer)
+            temp_data_test = data_test[agent, image, :]
+            temp_label_test = label_test[agent, image]
 
-            lambda_T = 2 * (xx[-1] - temp_label)
+            xx = forward_pass(uu[agent, iter], temp_data, T, dim_layer)
+            xx_test = forward_pass(uu[agent, iter], temp_data_test, T, dim_layer)
+
+            _, lambda_T = cost_function(xx[-1], temp_label)
+
+            JJ_temp, _ = cost_function(xx_test[-1], temp_label_test)
+            JJ[agent, iter] += JJ_temp
+            # dJJ[agent, iter] += np.linalg.norm(dJJ_temp)
+
             delta_u = backward_pass(xx, uu[agent, iter], lambda_T, T, dim_layer)
             for layer in range(T - 1):
                 grad_u[agent, iter, layer] += delta_u[layer] / (np.shape(temp_data)[0])
 
     ## Gradient Tracking
     for agent in range(NN):
-        for layer in range(T-1):
-            delta_grad_u = grad_u[agent, iter, layer] - grad_u[agent, iter-1, layer]
-            yy[agent, iter, layer] = WW[agent, agent] * yy[agent, iter-1, layer] + delta_grad_u
+        print("Agent = {}, Gradient Tracking".format(agent))
+        for layer in range(T - 1):
+            delta_grad_u = grad_u[agent, iter, layer] - grad_u[agent, iter - 1, layer]
+
+            yy[agent, iter, layer] = WW[agent, agent] * yy[agent, iter - 1, layer] + delta_grad_u
 
             for neigh in G.neighbors(agent):
-                yy[agent, iter, layer] = WW[agent, neigh]*yy[neigh, iter-1, layer]
+                yy[agent, iter, layer] = WW[agent, neigh] * yy[neigh, iter - 1, layer]
 
-            uu[agent, iter+1, layer] = WW[agent, agent]*uu[agent, iter, layer] - stepsize*yy[agent, iter, layer]
+            uu[agent, iter + 1, layer] = WW[agent, agent] * uu[agent, iter, layer] - stepsize * yy[agent, iter, layer]
 
             for neigh in G.neighbors(agent):
-                uu[agent, iter+1, layer] += WW[agent, neigh]*uu[neigh, iter, layer]
+                uu[agent, iter + 1, layer] += WW[agent, neigh] * uu[neigh, iter, layer]
+        dJJ[agent, iter] += (JJ[agent, iter] - JJ[agent, iter-1])/iter
+if SAVE:
+    np.save('store_data/max_iter.npy', max_iters, allow_pickle=True)
+    np.save('store_data/NN.npy', NN, allow_pickle=True)
+    np.save('store_data/JJ.npy', JJ, allow_pickle=True)
+    np.save('store_data/dJJ.npy', dJJ, allow_pickle=True)
+    np.save('store_data/uu.npy',uu, allow_pickle=True)
+    np.save('store_data/yy.npy',yy, allow_pickle=True)
 
+
+plt.figure()
+plt.plot(range(max_iters-1), (JJ[0,:-1]))
+plt.title("Cost function over iterations")
+plt.grid()
+
+plt.figure()
+plt.plot(range(max_iters), dJJ[0,:])
+plt.title("Gradient of Cost function")
+plt.grid()
+
+num_evaluation = 500
+# result_valid = ValidationFunction(uu[0,-1], x_test_vct, y_test, T, dim_layer, num_evaluation)
+# Results(result_valid, num_evaluation)
+
+counter_corr_label = 0
+for label in y_test:
+    if label == 1:
+        counter_corr_label += 1
+
+correct_predict = 0
+uncorrect_predict = 0
+for image in range(num_evaluation):
+    xx = forward_pass(uu[0,-1], x_test_vct[image,:], T, dim_layer)
+    predict = xx[-1, 0]
+
+    if (predict >= 0) and (y_test[image] == 1):
+        correct_predict += 1
+
+    elif (predict < 0) and (y_test[image] == -1):
+        correct_predict += 1
+    else:
+        uncorrect_predict += 1
+
+accuracy = 100*(correct_predict)/num_evaluation
+print("accuracy {}".format(accuracy))
 print('DAJE TUTTO OK')
