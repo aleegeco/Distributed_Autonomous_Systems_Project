@@ -4,7 +4,7 @@ from sklearn.model_selection import train_test_split
 import matplotlib.pyplot as plt  # this library will be used for data visualization
 import networkx as nx  # library for network creation/visualization/manipulation
 from Function_Task_1 import *
-
+import pandas as pd
 np.random.seed(0)  # generate random number (always the same seed)
 
 PRINT = True
@@ -25,7 +25,7 @@ p_ER = 0.3  # spawn edge probability
 I_NN = np.identity(NN, dtype=int)  # necessary to build the Adj
 
 # Main ALGORITHM Parameters
-max_iters = 30
+max_iters = 20
 stepsize = 0.1
 
 while 1:
@@ -117,11 +117,6 @@ if FIGURE:
 x_train_vct = np.reshape(x_train, (x_train.shape[0], x_train.shape[1] * x_train.shape[2]))
 x_test_vct = np.reshape(x_test, (x_test.shape[0], x_test.shape[1] * x_test.shape[2]))
 
-# MANCA LA PARTE DI BILANCIAMENTO DEL DATASET
-## We split the dataset for each agent
-# dim_train_agent = np.shape(x_train_vct)[0]//NN
-# dim_test_agent = np.shape(x_test_vct)[0]//NN
-
 dim_train_agent = 40  # impose the number of images
 dim_test_agent = 40
 
@@ -159,7 +154,7 @@ grad_u = np.zeros((NN, max_iters, T - 1, dim_layer, dim_layer + 1))  # +1 means 
 # uu[agent, iteration, layer, neuron, neuron + bias]
 uu[:, :, -1, 0] = 1
 JJ = np.zeros((NN, max_iters))
-dJJ_norm = np.zeros((NN, max_iters))
+dJJ = np.zeros((NN, max_iters))
 
 
 ## ITERATION 0 - Initialization of Gradient of u
@@ -177,9 +172,9 @@ for agent in range(NN):
         xx_test = forward_pass(uu[agent, 0], temp_data_test, T, dim_layer)
 
         _, lambda_T = cost_function(xx[-1], temp_label)
-        JJ_temp, dJJ_temp = cost_function(xx_test[-1], temp_label_test)
+        JJ_temp, _ = cost_function(xx_test[-1], temp_label_test)
         JJ[agent, 0] += JJ_temp
-        dJJ_norm[agent, 0] += np.linalg.norm(dJJ_temp)
+        # dJJ_norm[agent, 0] += np.linalg.norm(dJJ_temp)
 
         delta_u = backward_pass(xx, uu[agent, 0], lambda_T, T, dim_layer)
 
@@ -206,9 +201,9 @@ for iter in range(1, max_iters - 1):
 
             _, lambda_T = cost_function(xx[-1], temp_label)
 
-            JJ_temp, dJJ_temp = cost_function(xx_test[-1], temp_label_test)
+            JJ_temp, _ = cost_function(xx_test[-1], temp_label_test)
             JJ[agent, iter] += JJ_temp
-            dJJ_norm[agent, iter] += np.linalg.norm(dJJ_temp)
+            # dJJ_norm[agent, iter] += np.linalg.norm(dJJ_temp)
 
             delta_u = backward_pass(xx, uu[agent, iter], lambda_T, T, dim_layer)
             for layer in range(T - 1):
@@ -229,20 +224,22 @@ for iter in range(1, max_iters - 1):
 
             for neigh in G.neighbors(agent):
                 uu[agent, iter + 1, layer] += WW[agent, neigh] * uu[neigh, iter, layer]
-
+        dJJ[agent, iter] += (JJ[agent, iter] - JJ[agent, iter-1])/iter
 if SAVE:
-    np.savetxt('JJ.csv', JJ.flatten().tolist() , delimiter='::')
-    np.savetxt('dJJ_norm.csv', dJJ_norm.flatten().tolist() , delimiter='::')
-    np.savetxt('uu.csv',uu.flatten().tolist(), delimiter='::')
-    np.savetxt('grad_u.csv',grad_u.flatten().tolist(), delimiter='::')
-    np.savetxt('yy.csv',yy.flatten().tolist(), delimiter='::')
+    np.save('max_iter.npy', max_iters, allow_pickle=True)
+    np.save('NN.npy', NN, allow_pickle=True)
+    np.save('JJ.npy', JJ, allow_pickle=True)
+    np.save('dJJ.npy', dJJ, allow_pickle=True)
+    np.save('uu.npy',uu, allow_pickle=True)
+    np.save('grad_u.npy',grad_u, allow_pickle=True)
+    np.save('yy.npy',yy, allow_pickle=True)
 
 
 plt.figure()
 plt.plot(range(max_iters-1), (JJ[0,:-1]))
 
 plt.figure()
-plt.plot(range(max_iters), dJJ_norm[0,:])
+plt.plot(range(max_iters), dJJ[0,:])
 
 plt.figure()
 plt.plot(range(max_iters), grad_u[0, :, -2, 1, :])

@@ -107,6 +107,6 @@ def backward_pass(xx, uu, llambdaT, T, d):
 
 
 def cost_function(predicted: np.array, label: int):
-    J = (predicted - label).T @ (predicted - label)
+    J = (predicted - label) @ (predicted - label).T
     grad_J = 2 * (predicted - label)
     return J, grad_J
