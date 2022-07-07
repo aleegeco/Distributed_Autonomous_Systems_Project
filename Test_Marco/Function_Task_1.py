@@ -12,8 +12,8 @@ def inference_dynamics(xt, ut):
         output:
               xtp next state
     """
-    dim_layer = np.shape(ut)[0]
 
+    dim_layer = np.shape(xt)[0]
     xtp = np.zeros(dim_layer)
     for ell in range(dim_layer):
         temp = xt @ ut[ell, 1:] + ut[ell, 0]  # including the bias
@@ -38,7 +38,11 @@ def forward_pass(uu, x0, T, d):
     xx[0] = x0
 
     for t in range(T - 1):
-        xx[t + 1] = inference_dynamics(xx[t], uu[t])  # x^+ = f(x,u)
+        if t == T-2:
+            temp = xx[t] @ uu[t,0, 1:] + uu[t,0, 0]
+            xx[t + 1, 0] = act_function(temp)
+        else:
+            xx[t + 1] = inference_dynamics(xx[t], uu[t])  # x^+ = f(x,u)
 
     return xx
 
@@ -46,7 +50,7 @@ def forward_pass(uu, x0, T, d):
 # Adjoint dynamics:
 #   state:    lambda_t = A.T lambda_tp
 #   output: deltau_t = B.T lambda_tp
-def adjoint_dynamics(ltp, xt, ut, d):
+def adjoint_dynamics(ltp, xt, ut, d, t, T):
     """
         input:
               llambda_tp current costate
@@ -60,16 +64,26 @@ def adjoint_dynamics(ltp, xt, ut, d):
 
     # df_du = np.zeros((d,(d+1)*d))
     Delta_ut = np.zeros((d, d + 1))
+    if t == T-2:
+        dsigma_j = der_ac_function(xt @ ut[0, 1:] + ut[0, 0])
 
-    for j in range(d):
-        dsigma_j = der_ac_function(xt @ ut[j, 1:] + ut[j, 0])
-
-        df_dx[:, j] = ut[j, 1:] * dsigma_j
+        df_dx[:, 0] = ut[0, 1:] * dsigma_j
         # df_du[j, XX] = dsigma_j*np.hstack([1,xt])
 
         # B'@ltp
-        Delta_ut[j, 0] = ltp[j] * dsigma_j
-        Delta_ut[j, 1:] = xt * ltp[j] * dsigma_j
+        Delta_ut[0, 0] = ltp[0] * dsigma_j
+        Delta_ut[0, 1:] = xt * ltp[0] * dsigma_j
+
+    else:
+        for j in range(d):
+            dsigma_j = der_ac_function(xt @ ut[j, 1:] + ut[j, 0])
+
+            df_dx[:, j] = ut[j, 1:] * dsigma_j
+            # df_du[j, XX] = dsigma_j*np.hstack([1,xt])
+
+            # B'@ltp
+            Delta_ut[j, 0] = ltp[j] * dsigma_j
+            Delta_ut[j, 1:] = xt * ltp[j] * dsigma_j
 
     lt = df_dx @ ltp  # A'@ltp
     # Delta_ut = df_du@ltp
@@ -94,128 +108,48 @@ def backward_pass(xx, uu, llambdaT, T, d):
 
     Delta_u = np.zeros((T - 1, d, d + 1))
 
-    for t in reversed(range(T - 1)):  # T-2,T-1,...,1,0
-        llambda[t], Delta_u[t] = adjoint_dynamics(llambda[t + 1], xx[t], uu[t], d)
+    for t in reversed(range(T - 1)):  # T-2,...,1,0
+
+        llambda[t], Delta_u[t] = adjoint_dynamics(llambda[t + 1], xx[t], uu[t], d, t, T)
 
     return Delta_u
 
 
-def cost_function(predicted: np.array, label: int):
-    J = (predicted - label) @ (predicted - label).T
+def MSE(predicted: int, label: int):
+    J = (predicted - label)**2
     grad_J = 2 * (predicted - label)
     return J, grad_J
+
+def BCE(predicted: int, label: int):
+    J = - (label * np.log(predicted + 1e-10) + (1 - label) * np.log(1 - predicted + 1e-10))
+    grad_J = (label / (predicted + 1e-10) - (1 - label) / (1 - predicted + 1e-10))
+    return J, grad_J
+
 
 def val_function(uu, x_test_vct, y_test, T, dim_layer, dim_test):
     counter_corr_label = 0
     correct_predict = 0
+    correct_predict_not_lucky = 0
     false_positive = 0
     false_negative = 0
     for image in range(dim_test):
-        xx = forward_pass(uu[0, -1], x_test_vct[image, :], T, dim_layer)
-        predict = xx[-1]
+        xx = forward_pass(uu, x_test_vct[image, :], T, dim_layer)
+        predict = xx[-1,0]
         if y_test[image] == 1:
             counter_corr_label += 1
         if (predict >= 0) and (y_test[image] == 1):
             correct_predict += 1
         elif (predict < 0) and (y_test[image] == -1):
-            correct_predict += 1
+            correct_predict_not_lucky += 1
         elif (predict < 0) and (y_test[image] == 1):
             false_negative += 1
         elif (predict >= 0) and (y_test[image] == -1):
             false_positive += 1
 
-    print("The accuracy is {} % where:\n".format((correct_predict) / dim_test * 100))  # sum of first and second category expressed in percentage
+    print("The accuracy is {} % where:\n".format((correct_predict + correct_predict_not_lucky) / dim_test * 100))  # sum of first and second category expressed in percentage
     print("\tFalse positives {} \n".format(false_positive))  # third category ( false positive)
     print("\tFalse negatives {} \n".format(false_negative))  # fourth category ( false negative)
-    print("\tNumber of times LukyNumber has been identified correctly {} over {} \n".format(correct_predict, dim_test))  # first category ( images associated to lable 1 predicted correctly )
-    print("The effective LukyNumbers in the tests are: {}".format(counter_corr_label))
+    print("\tNumber of times LuckyNumber has been identified correctly {} over {} \n".format(correct_predict, dim_test))  # first category ( images associated to lable 1 predicted correctly )
+    print("\tNumber of times not LuckyNumber has been identified correctly {} over {} \n".format(correct_predict_not_lucky, dim_test))  # first category ( images associated to lable 1 predicted correctly )
+    print("The effective LuckyNumbers in the tests are: {}".format(counter_corr_label))
     return None
-# def ValidationFunction(uu: np.array, VectoryzedImagesTestArray: np.array, LablesTestArray: np.array,
-#                        NumberOfEvaluations, fringe=0.0):
-#     """
-#         Input:
-#             uu : tensor containing the weights of the neural network
-#             VectoryzedImagesTestArray : vector containing the vectorized image
-#             LablesTestArray : vector containing the lables of the images
-#             NumberOfEvaluations : Number of images we want to lable
-#             fringe : fringe above which we consider the prediction
-#
-#         Output:
-#             Resoult : Dictionary containing the number of correct/wrong predictions and False positive/negative
-#
-#         Dictionary values
-#             1 -> the NN predict 1 as lable and the true lable is 1 ( correct lable for 1)
-#            -1 -> the NN predict -1 as lable and the true lable is -1 ( correct lable for -1)
-#             2 -> the NN predict 1 as lable and the true lable is -1 ( false positive )
-#            -2 -> the NN predict -1 as lable and the true lable is 1 ( false negative )
-#             0 -> the prediction is under the treshold
-#
-#     """
-#     VectorOfEstimation = -np.ones(NumberOfEvaluations)
-#     for i in range(NumberOfEvaluations):
-#         xx = forward_pass(uu, VectoryzedImagesTestArray[i])  # here i move forward the image in the neural network
-#         # prediction = np.mean(xx[-1][:])# here i compute the avarege of the resoults of neural network
-#         prediction = xx[-1][0]
-#
-#         if (prediction >= fringe) and (LablesTestArray[i] == 1):  # prediction = 1 , true_lable = 1
-#             VectorOfEstimation[i] = 1
-#
-#         elif (prediction <= -fringe) and (LablesTestArray[i] == -1):  # prediction = -1 , true_lable = -1
-#             VectorOfEstimation[i] = -1
-#
-#         elif ((prediction >= fringe) and (LablesTestArray[i] == -1)):  # prediction = 1 , true_lable = -1
-#             VectorOfEstimation[i] = 2
-#
-#         elif ((prediction <= -fringe) and (LablesTestArray[i] == 1)):
-#             VectorOfEstimation[i] = -2
-#
-#         else:
-#             VectorOfEstimation[i] = 0
-#
-#     unique, counts = np.unique(VectorOfEstimation, return_counts=True)
-#     Result = dict(zip(unique, counts))
-#     return Result
-#
-# def Results(Dictionary, samples):
-#     '''
-#         Input:
-#             Dictionary: contains the number of guesses associated with each category
-#             samples: number of samples (images) used for the evaluation
-#
-#         Categories:(intended as dictionary keys)
-#             1 -> the NN predict 1 as lable and the true lable is 1 ( correct lable for 1)
-#            -1 -> the NN predict -1 as lable and the true lable is -1 ( correct lable for -1)
-#             2 -> the NN predict 1 as lable and the true lable is -1 ( false positive )
-#            -2 -> the NN predict -1 as lable and the true lable is 1 ( false negative )
-#             0 -> the prediction is under the treshold
-#     '''
-#     if "1.0" in Dictionary.keys():  # to key "1.0" is associated the number of elements of category 1
-#         Category1 = Dictionary["1.0"]
-#     else:
-#         Category1 = 0
-#
-#     if "-1.0" in Dictionary.keys():  # to key "-1.0" is associated the number of elements of category -1
-#         Category2 = Dictionary["-1.0"]
-#     else:
-#         Category2 = 0
-#
-#     if "2.0" in Dictionary.keys():  # to key "2.0" is associated the number of elements of category 2
-#         Category3 = Dictionary["2.0"]
-#     else:
-#         Category3 = 0
-#
-#     if "-2.0" in Dictionary.keys():  # to key "-2.0" is associated the number of elements of category -2
-#         Category4 = Dictionary["-2.0"]
-#     else:
-#         Category4 = 0
-#
-#     if "0.0" in Dictionary.keys():  # to key "0.0" is associated the number of elements of category 0
-#         Category5 = Dictionary["-2.0"]
-#     else:
-#         Category5 = 0
-#
-#     print("The accuracy is {} % where:\n".format((Category1 + Category2) / samples * 100))  # sum of first and second category expressed in percentage
-#     print("\tFalse positives {} \n".format(Category3))  # third category ( false positive)
-#     print("\tFalse negatives {} \n".format(Category4))  # fourth category ( false negative)
-#     print("\tNumber of times LukyNumber has been identified correctly {}\n".format(Category1))  # first category ( images associated to lable 1 predicted correctly )
-#     print("\tNumber of times non LukyNumber has been identified correctly {}\n".format(Category2))  # second category ( images associated to lable -1 predicted correctly

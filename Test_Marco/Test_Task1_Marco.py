@@ -1,3 +1,4 @@
+import numpy as np
 from keras.datasets import mnist
 from sklearn.model_selection import train_test_split
 import matplotlib.pyplot as plt  # this library will be used for data visualization
@@ -5,13 +6,14 @@ import networkx as nx  # library for network creation/visualization/manipulation
 from Function_Task_1 import *
 from imblearn.under_sampling import RandomUnderSampler
 from collections import Counter
+from Function_Task_1 import MSE as cost_function
 # np.random.seed(0)  # generate random number (always the same seed)
 
 PRINT = True
 FIGURE = False
 RESIZE_DATA = False
 SAVE = True
-BALANCING = False
+BALANCING = True
 
 # Parameters for the data size
 test_set_size = 0.1  # percentage of the test set over the entire data
@@ -21,16 +23,16 @@ percent = 0.1  # percentage of data we want to give to our system from all the d
 LuckyNumber = 4
 
 # DEFINITION OF THE BINOMIAL GRAPH
-NN = 4  # number of AGENTS
+NN = 2  # number of AGENTS
 p_ER = 0.3  # spawn edge probability
 I_NN = np.identity(NN, dtype=int)  # necessary to build the Adj
 
 # Main ALGORITHM Parameters
-max_iters = 20
+max_iters = 5
 stepsize = 0.01
 
-dim_train_agent = 100  # impose the number of images
-dim_test_agent = 100
+dim_train_agent = 600  # impose the number of images
+dim_test_agent = 200
 
 while 1:
     Adj = np.random.binomial(1, p_ER, (NN, NN))  # create a NN x NN matrix with random connections
@@ -92,7 +94,7 @@ if RESIZE_DATA:
     # Random redistribution of the data in two sets ( test and train)
     x_train, x_test, y_train, y_test = train_test_split(x_total, y_total, test_size=test_set_size)
 
-# we associate -1 to data which not represent the number we want to calssify
+# we associate -1 (or 0) to data which not represent the number we want to classify
 for i in range(0, np.shape(y_train)[0]):
     if y_train[i] == LuckyNumber:
         y_train[i] = 1
@@ -121,10 +123,14 @@ if FIGURE:
 x_train_vct = np.reshape(x_train, (x_train.shape[0], x_train.shape[1] * x_train.shape[2]))
 x_test_vct = np.reshape(x_test, (x_test.shape[0], x_test.shape[1] * x_test.shape[2]))
 
+# Under-sampling to make the dataset balanced
 if BALANCING:
     rus = RandomUnderSampler()
     x_train_vct, y_train = rus.fit_resample(x_train_vct, y_train)
+    x_test_vct, y_test = rus.fit_resample(x_test_vct, y_test)
+
     x_train_vct, _, y_train, _ = train_test_split(x_train_vct, y_train, test_size=0.01)
+    x_test_vct, _, y_test, _ = train_test_split(x_test_vct, y_test, test_size=0.01)
 
     print('Resampled dataset shape %s' % Counter(y_train))
 
@@ -157,18 +163,18 @@ for agent in range(NN):
 
 #  Set Up the Neural Network
 
-d = [784, 784, 784, 784]
+d = [784, 784, 784]
 T = len(d)  # how much layer we have
 dim_layer = d[0]  # number of neurons considering bias
 
 ## ALGORITHM ##
+# uu[agent, iteration, layer, neuron, neuron + bias]
 uu = np.zeros((NN, max_iters, T - 1, dim_layer, dim_layer + 1))  # +1 means bias
 uu[:,0,:,:,:] = np.random.randn(NN, T-1, dim_layer, dim_layer +1)
 yy = np.zeros((NN, max_iters, T - 1, dim_layer, dim_layer + 1))
 grad_u = np.zeros((NN, max_iters, T - 1, dim_layer, dim_layer + 1))  # +1 means bias
 
 # force the last layer to have a 1 and 0 ... 0
-# uu[agent, iteration, layer, neuron, neuron + bias]
 uu[:, 0, -1, 1:] = np.zeros((785))
 JJ = np.zeros((NN, max_iters))
 dJJ = np.zeros((NN, max_iters))
@@ -178,21 +184,21 @@ dJJ = np.zeros((NN, max_iters))
 for agent in range(NN):
     print("Agent {}, iter = {}".format(agent, 0))
     for image in range(dim_train_agent):
+        # Data Set
         temp_data = data_point[agent, image, :]
         temp_label = label_point[agent, image]
 
-        temp_data_test = data_test[agent, image, :]
-        temp_label_test = label_test[agent, image]
-
+        # Neural Network
         xx = forward_pass(uu[agent, 0], temp_data, T, dim_layer)
-        xx_test = forward_pass(uu[agent, 0], temp_data_test, T, dim_layer)
+        JJ_temp, dJJ_temp = cost_function(xx[-1,0], temp_label)
+        lambda_T = dJJ_temp
 
-        _, lambda_T = cost_function(xx[-1], temp_label)
-        JJ_temp, _ = cost_function(xx_test[-1], temp_label_test)
-        JJ[agent, 0] += (1/dim_test_agent)*JJ_temp
+        JJ[agent, 0] += JJ_temp
+        dJJ[agent, 0] += np.linalg.norm(dJJ_temp)
 
         delta_u = backward_pass(xx, uu[agent, 0], lambda_T, T, dim_layer)
 
+        ## Start Gradient Tracking
         for layer in range(T - 1):
             grad_u[agent, 0, layer] += delta_u[layer] / (np.shape(temp_data)[0])
             yy[agent, 0, layer] += delta_u[layer] / (np.shape(temp_data)[0])
@@ -208,30 +214,23 @@ for iter in range(1, max_iters-1):
             temp_data = data_point[agent, image, :]
             temp_label = label_point[agent, image]
 
-            temp_data_test = data_test[agent, image, :]
-            temp_label_test = label_test[agent, image]
-
             xx = forward_pass(uu[agent, iter], temp_data, T, dim_layer)
-            xx_test = forward_pass(uu[agent, iter], temp_data_test, T, dim_layer)
 
-            _, lambda_T = cost_function(xx[-1], temp_label)
+            _, lambda_T = cost_function(xx[-1, 0], temp_label)
 
-            JJ_temp, _ = cost_function(xx_test[-1], temp_label_test)
-            JJ[agent, iter] += (1/dim_test_agent)*JJ_temp
-            # dJJ[agent, iter] += np.linalg.norm(dJJ_temp)
+            JJ_temp, dJJ_temp = cost_function(xx[-1, 0], temp_label)
+            JJ[agent, iter] += JJ_temp
+            dJJ[agent, iter] += np.linalg.norm(dJJ_temp)
 
             delta_u = backward_pass(xx, uu[agent, iter], lambda_T, T, dim_layer)
+
             for layer in range(T - 1):
                 grad_u[agent, iter, layer] += delta_u[layer] / (np.shape(temp_data)[0])
 
     ## Gradient Tracking
-    for agent in range(NN):
-        print("Agent = {}, Gradient Tracking".format(agent))
         for layer in range(T - 1):
             delta_grad_u = grad_u[agent, iter, layer] - grad_u[agent, iter - 1, layer]
-
             yy[agent, iter, layer] = WW[agent, agent] * yy[agent, iter - 1, layer] + delta_grad_u
-
             for neigh in G.neighbors(agent):
                 yy[agent, iter, layer] = WW[agent, neigh] * yy[neigh, iter - 1, layer]
 
@@ -239,7 +238,11 @@ for iter in range(1, max_iters-1):
 
             for neigh in G.neighbors(agent):
                 uu[agent, iter + 1, layer] += WW[agent, neigh] * uu[neigh, iter, layer]
-        dJJ[agent, iter] += (JJ[agent, iter] - JJ[agent, iter-1])/iter
+
+
+
+
+
 if SAVE:
     np.save('store_data/max_iter.npy', max_iters, allow_pickle=True)
     np.save('store_data/NN.npy', NN, allow_pickle=True)
