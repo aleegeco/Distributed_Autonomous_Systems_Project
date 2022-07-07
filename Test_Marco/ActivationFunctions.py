@@ -1,6 +1,6 @@
 import numpy as np
 
-def bce():
+
 
 def sigmoid_fn(xi):
     return 1 / (1 + np.exp(-xi))

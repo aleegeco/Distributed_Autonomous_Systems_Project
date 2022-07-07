@@ -18,8 +18,8 @@ def generate_launch_description():
     k_i = 0.3 # integral gain
 
 
-    acceleration_leader = False # variable which sets the leaders acceleration
-    integral_action = True # variable which sets the integral action
+    acceleration_leader = True # variable which sets the leaders acceleration
+    integral_action = False # variable which sets the integral action
     random_init = True # variable which sets randomly the intial conditions
 
     # dictionary with all the formations we want to try
@@ -61,8 +61,6 @@ def generate_launch_description():
             xx_init[i_index[:dd]] = Node_pos[i,:,:]
         elif random_init:
             xx_init[i_index[:dd]] = 10*np.random.rand(dd).reshape((dd,1))
-
-
 
     # RVIZ
     # initialization of rviz variables

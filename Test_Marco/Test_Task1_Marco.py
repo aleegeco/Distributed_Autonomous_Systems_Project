@@ -1,4 +1,3 @@
-import numpy as np
 from keras.datasets import mnist
 from sklearn.model_selection import train_test_split
 import matplotlib.pyplot as plt  # this library will be used for data visualization
@@ -12,7 +11,7 @@ PRINT = True
 FIGURE = False
 RESIZE_DATA = False
 SAVE = True
-BALANCING = True
+BALANCING = False
 
 # Parameters for the data size
 test_set_size = 0.1  # percentage of the test set over the entire data
@@ -260,25 +259,6 @@ plt.plot(range(max_iters-1), dJJ[0,:-1])
 plt.title("Gradient of Cost function")
 plt.grid()
 
-num_evaluation = 500
-counter_corr_label = 0
-correct_predict = 0
-false_positive = 0
-false_negative = 0
-for image in range(num_evaluation):
-    xx = forward_pass(uu[0,-1], x_test_vct[image,:], T, dim_layer)
-    predict = xx[-1, 0]
-    if y_test[image] == 1:
-        counter_corr_label += 1
-    if (predict >= 0) and (y_test[image] == 1):
-        correct_predict += 1
-    elif (predict < 0) and (y_test[image] == -1):
-        correct_predict += 1
-    elif (predict < 0) and (y_test[image] == 1):
-        false_negative += 1
-    elif (predict >= 0) and (y_test[image]  == -1):
-        false_positive += 1
+val_function(uu[0,-1], x_test_vct, y_test, T, dim_layer, dim_test_agent)
 
-accuracy = 100*(correct_predict)/num_evaluation
-print("accuracy {}".format(accuracy))
 print('DAJE TUTTO OK')

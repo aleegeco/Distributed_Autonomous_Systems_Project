@@ -2,10 +2,14 @@ import numpy as np
 import networkx as nx
 from roboticstoolbox.tools.trajectory import *
 
+#### FUNCTIONS STORE ####
+# we stored in this file all the functions we are going to use in this task
+
 
 def bearing_vector(vec_pi: np.array, vec_pj: np.array, d=None):
-    # vec_p is a position vector of dimension dx1
-    # We have to check it
+    ### Function which computes the unit bearing vector between agent i and agent j
+    ## INPUT: vec_pi: position vector of agent i, vec_pj: position vector of agent j, d: int (facoltative) plane or space
+    # vec_p has dimension dx1
     row_i = np.shape(vec_pi)[0]
     row_j = np.shape(vec_pj)[0]
     if all(vec_pi == vec_pj): # if the vector is the same we have to avoid numerical error in the division
@@ -25,7 +29,8 @@ def bearing_vector(vec_pi: np.array, vec_pj: np.array, d=None):
 
 
 def proj_matrix(vec_pi: np.array, vec_pj: np.array, d=None):
-    # Function that computes the Projection Matrix based on the vectors p_i and p_j
+    ### Function that computes the Projection Matrix based on the vectors p_i and p_j
+    ## INPUT: vec_pi: position vector of agent i, vec_pj: position vector of agent j, d: int (facoltative) plane or space
     if d:  # if we impose a different dimension
         g_ij = bearing_vector(vec_pi, vec_pj, d)  # recall the function of bearing vector
         Id = np.identity(d)
@@ -39,7 +44,9 @@ def proj_matrix(vec_pi: np.array, vec_pj: np.array, d=None):
 
 
 def proj_stack(pos_nodes: np.array, NN: int, d: int):
-    # function to define a tensor who store all projection matrices for each pair nodes
+    ### Function which compute a tensor which stores all projection matrices for each pair nodes
+    ## INPUT: pos_nodes[node, dd, 1]: array - given the node it stores the reference position p* = (p*_x p*_y)
+    ## NN:int - number of agents, d:int - dimension of the space
     Pg_stack = np.zeros((NN, NN, d, d))  # tensor of dimension (NN, NN, d,d)
     for node_i in range(NN):
         for node_j in range(NN):
@@ -51,8 +58,8 @@ def proj_stack(pos_nodes: np.array, NN: int, d: int):
 
 
 def bearing_laplacian(Pg_stack: np.array, Adj: np.array, d: int):
-    # function which computes the bearing laplacian
-    # it computes the matrix B(G(p*))
+    ### Function which computes the bearing laplacian B(G(p*))
+    ## INPUT: Pg_stack[node_i, node_j, dd, dd]: array - store of the projection matrix Pg_ij for each pair of nodes
     n_agents = np.shape(Adj)[0]  # int representing number of agents
     B_temp = np.zeros((n_agents, n_agents, d, d))  # temp tensor of 4  dimension to create the matrix B(G(p*))
     for node_i in range(n_agents):
@@ -75,6 +82,10 @@ def bearing_laplacian(Pg_stack: np.array, Adj: np.array, d: int):
 
 
 def kron_dynamical_matrix(B: np.array, NN: int, n_leaders: int, k_p: int, k_v: int, d: int):
+    ### Function which computes the system dynamical matrix (with inputs) using the kroenecker product
+    ## INPUT: B:array - the Bearing Laplacian Matrix, NN:int - number of agents, n_leaders:int - number of leaders
+    ## k_p, k_v - position and velocity gains, d:int plane or space dimension
+
     n_followers = NN - n_leaders
     zeros_nl = np.zeros((n_leaders, 2*NN))
     zeros_nf = np.zeros((n_followers, NN+n_leaders))
@@ -94,20 +105,23 @@ def kron_dynamical_matrix(B: np.array, NN: int, n_leaders: int, k_p: int, k_v: i
     A_kron = np.concatenate((A_kron, np.negative(B_gains)), axis=0)
     return A_kron
 
+#### ROS 2 FUNCTIONS ####
 
 def update_dynamics(dt: int, self):
-    # function which update the dynamics of each agent in ROS2, it is computed agent-wise not in compact matrix form
-    # it takes "self" so we can use every class variable without explicitly declare it
-
+    ### Function which update the dynamics of each agent in ROS2, it is computed agent-wise not in compact matrix form
+    ## INPUT it takes "self" so we can use every class variable defined in agent_i.py without explicitly declare it
     n_x = np.shape(self.x_i)[0] # dimension of the state vector
     dd = n_x//2 # dimension of position and velocity vector (i.e. we're in the plane XY or in the space XYZ)
-    K_i = np.zeros((dd,dd))
+
     x_i = self.x_i # state of the agent i at this time step
     x_dot_i = np.zeros(n_x)
+
     # divide the dynamics in position and velocity vector
     pos_i = x_i[:dd]
     vel_i = x_i[dd:]
     vel_dot_i = np.zeros(dd)
+
+    K_i = np.zeros((dd, dd))  # gain matrix for moving leaders control
     w_i = np.ones(dd) * 0.3 # constant input disturbance
 
     if self.agent_id < self.n_leaders: # if the considered agent is a leader
@@ -139,13 +153,13 @@ def update_dynamics(dt: int, self):
             self.error_pos[self.agent_id, node_j, :] += (pos_i - pos_j)*dt  # increase the sum for the integral term
             Pg_ij = self.Pg_stack_ii[node_j, :]  # set the Pg_ij* as a variable to make the code clearer
 
-            if self.leader_acceleration:
-                vel_dot_j = calc_derivative(self, node_j) # numerical derivative for neighbors acceleration
+            if self.leader_acceleration:  # if leaders are moving we impose this dynamics
+                vel_dot_j = calc_derivative(self, node_j, dt) # numerical derivative for neighbors acceleration
                 pos_dot_i = vel_i
                 vel_dot_i += - np.linalg.inv(K_i)@(Pg_ij @ (self.k_p * (pos_i - pos_j) \
                                                               + self.k_v * (vel_i - vel_j) - vel_dot_j))
-                if self.integral_action: # if we want to apply the integral term
-                    int_term = saturation(self, node_j)
+                if self.integral_action:  # if we want to apply the integral term
+                    int_term = self.k_i*self.error_pos[self.agent_id, node_j, :]
                     pos_dot_i = vel_i
                     vel_dot_i += - np.linalg.inv(K_i)@(Pg_ij@(self.k_p*(pos_i - pos_j) \
                                             + self.k_v*(vel_i - vel_j)+ int_term - vel_dot_j)) + w_i
@@ -154,7 +168,7 @@ def update_dynamics(dt: int, self):
                 vel_dot_i += - Pg_ij@(self.k_p*(pos_i - pos_j) + self.k_v*(vel_i - vel_j))
 
                 if self.integral_action: # if we want to apply the integral term
-                    int_term = saturation(self, node_j)
+                    int_term = self.k_i*self.error_pos[self.agent_id, node_j, :]
                     pos_dot_i = vel_i
                     vel_dot_i += - (Pg_ij@(self.k_p*(pos_i - pos_j) + self.k_v*(vel_i - vel_j)+ int_term)) + w_i
 
@@ -164,11 +178,11 @@ def update_dynamics(dt: int, self):
 
     return x_i
 
-def calc_derivative(self, node_j):
-    # function that computes the backward numerical derivative for the neighbor velocity
+def calc_derivative(self, node_j, dt):
+    ### Function that computes the backward numerical derivative for the neighbor velocity
+    ## INPUT: self, node_j: int - neighbor node of the node we are considering
     n_x = np.shape(self.x_i)[0] # dimension of the state vector
     dd = n_x//2 # dimension of position and velocity vector
-    dt = self.communication_time
     index_i = node_j*dd + np.arange(dd) # [0 1], [2 3], ...
     if self.tt == 0:
         vel_dot_j = self.store_acc[index_i, self.tt]/dt
@@ -179,31 +193,31 @@ def calc_derivative(self, node_j):
     return vel_dot_j
 
 def piecewise_acc(self):
-    # functions used to define a piecewise continuous acceleration for leaders
+    ### Functions used to define a piecewise continuous acceleration for leaders using a fifth polynomial function
     n_x = np.shape(self.x_i)[0]
     dd = n_x//2
     time = np.linspace(0, self.max_iters, self.max_iters + 2)
-    tg = quintic(0, 100, time)
-    acc = 500*tg.qdd
+    tg = quintic(0, 1*10e3, time)
+    acc = 100*tg.qdd
     acc_t = acc[self.tt]
     acc_t = np.ones(dd)*acc_t
     return acc_t
 
-def saturation(self, node_j):
-    n_x = np.shape(self.x_i)[0] # dimension of the state vector
-    dd = n_x//2 # dimension of position and velocity vector
-    err_x = self.k_i*self.error_pos[self.agent_id, node_j, 0]
-    err_y = self.k_i*self.error_pos[self.agent_id, node_j, 1]
-
-    # if err_x > self.max_error:
-    #     err_x = self.max_error
-    # if err_x < - self.max_error:
-    #     err_x = - self.max_error
-    #
-    # if err_y > self.max_error:
-    #     err_y = self.max_error
-    # if err_y < - self.max_error:
-    #     err_y = - self.max_error
-
-    error = np.array([err_x, err_y]).reshape((dd))
-    return error
+# def saturation(self, node_j):
+#     n_x = np.shape(self.x_i)[0] # dimension of the state vector
+#     dd = n_x//2 # dimension of position and velocity vector
+#     err_x = self.k_i*self.error_pos[self.agent_id, node_j, 0]
+#     err_y = self.k_i*self.error_pos[self.agent_id, node_j, 1]
+#
+#     # if err_x > self.max_error:
+#     #     err_x = self.max_error
+#     # if err_x < - self.max_error:
+#     #     err_x = - self.max_error
+#     #
+#     # if err_y > self.max_error:
+#     #     err_y = self.max_error
+#     # if err_y < - self.max_error:
+#     #     err_y = - self.max_error
+#
+#     error = np.array([err_x, err_y]).reshape((dd))
+#     return error
