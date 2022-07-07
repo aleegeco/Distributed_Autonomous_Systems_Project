@@ -1,5 +1,6 @@
 import numpy as np
 
+def bce():
 
 def sigmoid_fn(xi):
     return 1 / (1 + np.exp(-xi))
@@ -37,4 +38,4 @@ def tanh(xi):
 
 
 def tanh_derivative(xi):
-    return (2 / (np.exp(xi) + np.exp(-xi))) ** 2
+    return (1 - tanh(xi)**2)

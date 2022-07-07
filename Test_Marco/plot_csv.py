@@ -30,14 +30,14 @@ plt.title("Gradient of the cost function"); plt.grid()
 plt.xlabel("iteration")
 plt.ylabel("dJ")
 
-nn = 3
+nn = 4
 fig, axs = plt.subplots(nn, nn)
 for i in range(nn):
     for j in range(nn):
         random_node = int(np.random.rand()*(d[1]))
         random_weight = int(np.random.rand()*(d[1]))
         for agent in range(NN):
-            axs[i,j].plot(range(max_iters-1), uu[agent, :-1, 1 , random_node, random_weight])
+            axs[i,j].plot(range(max_iters-1), uu[agent, :-1, 2, random_node, random_weight])
 
 
 print('DAJE TUTTO OK')
