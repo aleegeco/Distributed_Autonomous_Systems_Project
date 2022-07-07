@@ -6,7 +6,6 @@ import networkx as nx  # library for network creation/visualization/manipulation
 from Function_Task_1 import *
 from imblearn.under_sampling import RandomUnderSampler
 from collections import Counter
-import os
 # np.random.seed(0)  # generate random number (always the same seed)
 
 PRINT = True
@@ -29,7 +28,10 @@ I_NN = np.identity(NN, dtype=int)  # necessary to build the Adj
 
 # Main ALGORITHM Parameters
 max_iters = 20
-stepsize = 0.1
+stepsize = 0.01
+
+dim_train_agent = 100  # impose the number of images
+dim_test_agent = 100
 
 while 1:
     Adj = np.random.binomial(1, p_ER, (NN, NN))  # create a NN x NN matrix with random connections
@@ -137,8 +139,6 @@ if BALANCING:
             plt.imshow(np.reshape(x_train_vct[i], (28, 28)))
             plt.xlabel(y_train[i])
         plt.show()
-dim_train_agent = 40  # impose the number of images
-dim_test_agent = 40
 
 data_point = np.zeros((NN, dim_train_agent, np.shape(x_train_vct)[1]))
 label_point = np.zeros((NN, dim_train_agent))
@@ -190,7 +190,7 @@ for agent in range(NN):
 
         _, lambda_T = cost_function(xx[-1], temp_label)
         JJ_temp, _ = cost_function(xx_test[-1], temp_label_test)
-        JJ[agent, 0] += JJ_temp
+        JJ[agent, 0] += (1/dim_test_agent)*JJ_temp
 
         delta_u = backward_pass(xx, uu[agent, 0], lambda_T, T, dim_layer)
 
@@ -202,7 +202,7 @@ for agent in range(NN):
         uu[agent, 1, layer] += WW[agent, agent] * uu[agent, 0, layer] - stepsize * grad_u[agent, 0, layer]
 
 # ALGORITHM STARTING FROM k = 1
-for iter in range(1, max_iters - 1):
+for iter in range(1, max_iters-1):
     for agent in range(NN):
         print("Agent {}, iter = {}".format(agent, iter))
         for image in range(dim_train_agent):
@@ -218,7 +218,7 @@ for iter in range(1, max_iters - 1):
             _, lambda_T = cost_function(xx[-1], temp_label)
 
             JJ_temp, _ = cost_function(xx_test[-1], temp_label_test)
-            JJ[agent, iter] += JJ_temp
+            JJ[agent, iter] += (1/dim_test_agent)*JJ_temp
             # dJJ[agent, iter] += np.linalg.norm(dJJ_temp)
 
             delta_u = backward_pass(xx, uu[agent, iter], lambda_T, T, dim_layer)
@@ -256,32 +256,28 @@ plt.title("Cost function over iterations")
 plt.grid()
 
 plt.figure()
-plt.plot(range(max_iters), dJJ[0,:])
+plt.plot(range(max_iters-1), dJJ[0,:-1])
 plt.title("Gradient of Cost function")
 plt.grid()
 
 num_evaluation = 500
-# result_valid = ValidationFunction(uu[0,-1], x_test_vct, y_test, T, dim_layer, num_evaluation)
-# Results(result_valid, num_evaluation)
-
 counter_corr_label = 0
-for label in y_test:
-    if label == 1:
-        counter_corr_label += 1
-
 correct_predict = 0
-uncorrect_predict = 0
+false_positive = 0
+false_negative = 0
 for image in range(num_evaluation):
     xx = forward_pass(uu[0,-1], x_test_vct[image,:], T, dim_layer)
     predict = xx[-1, 0]
-
+    if y_test[image] == 1:
+        counter_corr_label += 1
     if (predict >= 0) and (y_test[image] == 1):
         correct_predict += 1
-
     elif (predict < 0) and (y_test[image] == -1):
         correct_predict += 1
-    else:
-        uncorrect_predict += 1
+    elif (predict < 0) and (y_test[image] == 1):
+        false_negative += 1
+    elif (predict >= 0) and (y_test[image]  == -1):
+        false_positive += 1
 
 accuracy = 100*(correct_predict)/num_evaluation
 print("accuracy {}".format(accuracy))
