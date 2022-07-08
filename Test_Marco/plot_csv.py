@@ -32,7 +32,7 @@ for i in range(max_iters):
 
 plt.figure()
 for agent in range(NN):
-    plt.semilogy(range(max_iters-1), norm[:-1])
+    plt.semilogy(range(max_iters-1), (norm[:-1]))
 plt.title("Gradient of the cost function"); plt.grid()
 plt.xlabel("iteration")
 plt.ylabel("dJ")

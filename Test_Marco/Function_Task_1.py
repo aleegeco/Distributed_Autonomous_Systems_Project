@@ -122,7 +122,7 @@ def MSE(predicted: int, label: int):
 
 def BCE(predicted: int, label: int):
     J = - (label * np.log(predicted + 1e-10) + (1 - label) * np.log(1 - predicted + 1e-10))
-    grad_J = (label / (predicted + 1e-10) - (1 - label) / (1 - predicted + 1e-10))
+    grad_J = - label / (predicted + 1e-10) + (1 - label) / (1 - predicted + 1e-10)
     return J, grad_J
 
 

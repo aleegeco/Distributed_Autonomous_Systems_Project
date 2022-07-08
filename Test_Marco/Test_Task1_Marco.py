@@ -6,7 +6,7 @@ import networkx as nx  # library for network creation/visualization/manipulation
 from Function_Task_1 import *
 from imblearn.under_sampling import RandomUnderSampler
 from collections import Counter
-from Function_Task_1 import MSE as cost_function
+from Function_Task_1 import BCE as cost_function
 # np.random.seed(0)  # generate random number (always the same seed)
 
 PRINT = True
@@ -28,11 +28,11 @@ p_ER = 0.3  # spawn edge probability
 I_NN = np.identity(NN, dtype=int)  # necessary to build the Adj
 
 # Main ALGORITHM Parameters
-max_iters = 25
+max_iters = 40
 stepsize = 0.01
 
-dim_train_agent = 300  # impose the number of images
-dim_test_agent = 100
+dim_train_agent = 40  # impose the number of images
+dim_test_agent = 20
 
 while 1:
     Adj = np.random.binomial(1, p_ER, (NN, NN))  # create a NN x NN matrix with random connections
@@ -59,11 +59,8 @@ for ii in range(NN):
 
     for jj in N_ii:
         N_jj = np.nonzero(Adj[jj])[0]  # In-Neighbors of node j
-        # deg_jj = len(N_jj)
         deg_jj = N_jj.shape[0]
-
         WW[ii, jj] = 1 / (1 + max([deg_ii, deg_jj]))
-        # WW[ii,jj] = 1/(1+np.max(np.stack((deg_ii,deg_jj)) ))
 
 WW += I_NN - np.diag(np.sum(WW, axis=0))
 
@@ -169,12 +166,10 @@ dim_layer = d[0]  # number of neurons considering bias
 ## ALGORITHM ##
 # uu[agent, iteration, layer, neuron, neuron + bias]
 uu = np.zeros((NN, max_iters, T - 1, dim_layer, dim_layer + 1))  # +1 means bias
-uu[:,0,:,:,:] = np.random.randn(NN, T-1, dim_layer, dim_layer +1)
+uu[:,0,:,:,:] = np.random.randn(NN, T-1, dim_layer, dim_layer +1)*10
 yy = np.zeros((NN, max_iters, T - 1, dim_layer, dim_layer + 1))
 delta_u = np.zeros((NN, max_iters, T - 1, dim_layer, dim_layer + 1))  # +1 means bias
 
-# force the last layer to have a 1 and 0 ... 0
-uu[:, 0, -1, 1:] = np.zeros((785))
 JJ = np.zeros((NN, max_iters))
 delta_u_store = np.zeros((NN, max_iters))
 
@@ -194,16 +189,14 @@ for agent in range(NN):
         lambda_T = dJJ_temp
         JJ[agent, 0] += JJ_temp
 
-        delta_u[agent,0] = backward_pass(xx, uu[agent, 0], lambda_T, T, dim_layer)
+        delta_u[agent,0] += backward_pass(xx, uu[agent, 0], lambda_T, T, dim_layer)
 
-        ## Start Gradient Tracking
-        for layer in range(T - 1):
-            delta_u[agent, 0, layer] += delta_u[agent,0,layer]
-
-        yy[agent, 0] = delta_u[agent,0]
-
-    for layer in range(T - 1):
-        uu[agent, 1, layer] += WW[agent, agent] * uu[agent, 0, layer] - stepsize * delta_u[agent, 0, layer]
+        # ## Start Gradient Tracking
+        # for layer in range(T - 1):
+        #     delta_u[agent, 0, layer] += delta_u[agent,0,layer]
+    yy[agent, 0] = delta_u[agent,0]
+    # for layer in range(T - 1):
+    uu[agent, 1] += WW[agent, agent] * uu[agent, 0] - stepsize * delta_u[agent, 0]
 
 # ALGORITHM STARTING FROM k = 1
 for iter in range(1, max_iters-1):
@@ -220,25 +213,22 @@ for iter in range(1, max_iters-1):
             JJ[agent, iter] += JJ_temp
             lambda_T = dJJ_temp
 
-            delta_u[agent, iter] = backward_pass(xx, uu[agent, iter], lambda_T, T, dim_layer)
+            delta_u[agent, iter] += backward_pass(xx, uu[agent, iter], lambda_T, T, dim_layer)
 
-
-            for layer in range(T - 1):
-                delta_u[agent, iter, layer] += delta_u[agent, iter, layer]
+            #
+            # for layer in range(T - 1):
+            #     delta_u[agent, iter, layer] += delta_u[agent, iter, layer]
 
     ## Gradient Tracking
     for agent in range(NN):
-            for layer in range(T - 1):
-                yy[agent, iter, layer] = WW[agent, agent] * yy[agent, iter - 1, layer] +\
-                                         delta_u[agent, iter, layer] - delta_u[agent, iter - 1, layer]
+            # for layer in range(T - 1):
+        yy[agent, iter+1] = WW[agent, agent] * yy[agent, iter] - stepsize*(delta_u[agent, iter+1] - delta_u[agent, iter])
+        for neigh in G.neighbors(agent):
+            yy[agent, iter+1] = WW[agent, neigh] * yy[neigh, iter]
 
-                for neigh in G.neighbors(agent):
-                    yy[agent, iter, layer] = WW[agent, neigh] * yy[neigh, iter - 1, layer]
-
-                uu[agent, iter + 1, layer] = WW[agent, agent] * uu[agent, iter, layer] - stepsize * yy[agent, iter, layer]
-
-                for neigh in G.neighbors(agent):
-                    uu[agent, iter + 1, layer] += WW[agent, neigh] * uu[neigh, iter, layer]
+        uu[agent, iter + 1] = WW[agent, agent] * uu[agent, iter] - stepsize * yy[agent, iter]
+        for neigh in G.neighbors(agent):
+            uu[agent, iter + 1] += WW[agent, neigh] * uu[neigh, iter]
 
 
 if SAVE:
@@ -257,10 +247,10 @@ plt.plot(range(max_iters-1), (JJ[0,:-1]))
 plt.title("Cost function over iterations")
 plt.grid()
 
-plt.figure()
-plt.semilogy(range(max_iters-1), delta_u[0, :-1, 1])
-plt.title("Gradient of Cost function")
-plt.grid()
+# plt.figure()
+# plt.semilogy(range(max_iters-1), delta_u[0, :-1, 1])
+# plt.title("Gradient of Cost function")
+# plt.grid()
 
 val_function(uu[0,-1], x_test_vct, y_test, T, dim_layer, dim_test_agent)
 
