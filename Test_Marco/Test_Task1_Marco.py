@@ -6,7 +6,7 @@ import networkx as nx  # library for network creation/visualization/manipulation
 from Function_Task_1 import *
 from imblearn.under_sampling import RandomUnderSampler
 from collections import Counter
-from Function_Task_1 import MSE as cost_function
+from Function_Task_1 import BCE as cost_function
 # np.random.seed(0)  # generate random number (always the same seed)
 
 PRINT = True
@@ -23,16 +23,16 @@ percent = 0.1  # percentage of data we want to give to our system from all the d
 LuckyNumber = 4
 
 # DEFINITION OF THE BINOMIAL GRAPH
-NN = 2  # number of AGENTS
+NN = 4  # number of AGENTS
 p_ER = 0.3  # spawn edge probability
 I_NN = np.identity(NN, dtype=int)  # necessary to build the Adj
 
 # Main ALGORITHM Parameters
-max_iters = 5
+max_iters = 25
 stepsize = 0.01
 
-dim_train_agent = 600  # impose the number of images
-dim_test_agent = 200
+dim_train_agent = 300  # impose the number of images
+dim_test_agent = 100
 
 while 1:
     Adj = np.random.binomial(1, p_ER, (NN, NN))  # create a NN x NN matrix with random connections
@@ -99,13 +99,13 @@ for i in range(0, np.shape(y_train)[0]):
     if y_train[i] == LuckyNumber:
         y_train[i] = 1
     else:
-        y_train[i] = -1
+        y_train[i] = 0
 
 for i in range(0, np.shape(y_test)[0]):
     if y_test[i] == LuckyNumber:
         y_test[i] = 1
     else:
-        y_test[i] = -1
+        y_test[i] = 0
 
 # visualize some images of the dataset with the new labels
 if FIGURE:
@@ -162,7 +162,6 @@ for agent in range(NN):
     label_test[agent, :] = y_test[agent_index]
 
 #  Set Up the Neural Network
-
 d = [784, 784, 784]
 T = len(d)  # how much layer we have
 dim_layer = d[0]  # number of neurons considering bias
@@ -172,12 +171,12 @@ dim_layer = d[0]  # number of neurons considering bias
 uu = np.zeros((NN, max_iters, T - 1, dim_layer, dim_layer + 1))  # +1 means bias
 uu[:,0,:,:,:] = np.random.randn(NN, T-1, dim_layer, dim_layer +1)
 yy = np.zeros((NN, max_iters, T - 1, dim_layer, dim_layer + 1))
-grad_u = np.zeros((NN, max_iters, T - 1, dim_layer, dim_layer + 1))  # +1 means bias
+delta_u = np.zeros((NN, max_iters, T - 1, dim_layer, dim_layer + 1))  # +1 means bias
 
 # force the last layer to have a 1 and 0 ... 0
 uu[:, 0, -1, 1:] = np.zeros((785))
 JJ = np.zeros((NN, max_iters))
-dJJ = np.zeros((NN, max_iters))
+delta_u_store = np.zeros((NN, max_iters))
 
 
 ## ITERATION 0 - Initialization of Gradient of u
@@ -190,21 +189,21 @@ for agent in range(NN):
 
         # Neural Network
         xx = forward_pass(uu[agent, 0], temp_data, T, dim_layer)
+
         JJ_temp, dJJ_temp = cost_function(xx[-1,0], temp_label)
         lambda_T = dJJ_temp
-
         JJ[agent, 0] += JJ_temp
-        dJJ[agent, 0] += np.linalg.norm(dJJ_temp)
 
-        delta_u = backward_pass(xx, uu[agent, 0], lambda_T, T, dim_layer)
+        delta_u[agent,0] = backward_pass(xx, uu[agent, 0], lambda_T, T, dim_layer)
 
         ## Start Gradient Tracking
         for layer in range(T - 1):
-            grad_u[agent, 0, layer] += delta_u[layer] / (np.shape(temp_data)[0])
-            yy[agent, 0, layer] += delta_u[layer] / (np.shape(temp_data)[0])
+            delta_u[agent, 0, layer] += delta_u[agent,0,layer]
+
+        yy[agent, 0] = delta_u[agent,0]
 
     for layer in range(T - 1):
-        uu[agent, 1, layer] += WW[agent, agent] * uu[agent, 0, layer] - stepsize * grad_u[agent, 0, layer]
+        uu[agent, 1, layer] += WW[agent, agent] * uu[agent, 0, layer] - stepsize * delta_u[agent, 0, layer]
 
 # ALGORITHM STARTING FROM k = 1
 for iter in range(1, max_iters-1):
@@ -216,40 +215,41 @@ for iter in range(1, max_iters-1):
 
             xx = forward_pass(uu[agent, iter], temp_data, T, dim_layer)
 
-            _, lambda_T = cost_function(xx[-1, 0], temp_label)
 
             JJ_temp, dJJ_temp = cost_function(xx[-1, 0], temp_label)
             JJ[agent, iter] += JJ_temp
-            dJJ[agent, iter] += np.linalg.norm(dJJ_temp)
+            lambda_T = dJJ_temp
 
-            delta_u = backward_pass(xx, uu[agent, iter], lambda_T, T, dim_layer)
+            delta_u[agent, iter] = backward_pass(xx, uu[agent, iter], lambda_T, T, dim_layer)
+
 
             for layer in range(T - 1):
-                grad_u[agent, iter, layer] += delta_u[layer] / (np.shape(temp_data)[0])
+                delta_u[agent, iter, layer] += delta_u[agent, iter, layer]
 
     ## Gradient Tracking
-        for layer in range(T - 1):
-            delta_grad_u = grad_u[agent, iter, layer] - grad_u[agent, iter - 1, layer]
-            yy[agent, iter, layer] = WW[agent, agent] * yy[agent, iter - 1, layer] + delta_grad_u
-            for neigh in G.neighbors(agent):
-                yy[agent, iter, layer] = WW[agent, neigh] * yy[neigh, iter - 1, layer]
+    for agent in range(NN):
+            for layer in range(T - 1):
+                yy[agent, iter, layer] = WW[agent, agent] * yy[agent, iter - 1, layer] +\
+                                         delta_u[agent, iter, layer] - delta_u[agent, iter - 1, layer]
 
-            uu[agent, iter + 1, layer] = WW[agent, agent] * uu[agent, iter, layer] - stepsize * yy[agent, iter, layer]
+                for neigh in G.neighbors(agent):
+                    yy[agent, iter, layer] = WW[agent, neigh] * yy[neigh, iter - 1, layer]
 
-            for neigh in G.neighbors(agent):
-                uu[agent, iter + 1, layer] += WW[agent, neigh] * uu[neigh, iter, layer]
+                uu[agent, iter + 1, layer] = WW[agent, agent] * uu[agent, iter, layer] - stepsize * yy[agent, iter, layer]
 
-
-
+                for neigh in G.neighbors(agent):
+                    uu[agent, iter + 1, layer] += WW[agent, neigh] * uu[neigh, iter, layer]
 
 
 if SAVE:
     np.save('store_data/max_iter.npy', max_iters, allow_pickle=True)
     np.save('store_data/NN.npy', NN, allow_pickle=True)
     np.save('store_data/JJ.npy', JJ, allow_pickle=True)
-    np.save('store_data/dJJ.npy', dJJ, allow_pickle=True)
+    np.save('store_data/delta_u.npy', delta_u, allow_pickle=True)
     np.save('store_data/uu.npy',uu, allow_pickle=True)
     np.save('store_data/yy.npy',yy, allow_pickle=True)
+    np.save('store_data/y_test.npy', y_test, allow_pickle=True)
+    np.save('store_data/x_test_vct', x_test_vct, allow_pickle=True)
 
 
 plt.figure()
@@ -258,7 +258,7 @@ plt.title("Cost function over iterations")
 plt.grid()
 
 plt.figure()
-plt.plot(range(max_iters-1), dJJ[0,:-1])
+plt.semilogy(range(max_iters-1), delta_u[0, :-1, 1])
 plt.title("Gradient of Cost function")
 plt.grid()
 

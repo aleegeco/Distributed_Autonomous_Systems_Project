@@ -14,14 +14,14 @@ def ReluPlus(xi):
     if xi >= 0:
         return xi
     else:
-        return 0.1 * xi
+        return 0
 
 
 def ReluPlus_derivative(xi):
     if xi >= 0:
         return 1
     else:
-        return 0.1
+        return 0
 
 
 def sigmoid_fnPosNeg(xi):

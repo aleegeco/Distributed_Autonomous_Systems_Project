@@ -1,6 +1,6 @@
 import numpy as np
-from ActivationFunctions import ReluPlus as act_function
-from ActivationFunctions import ReluPlus_derivative as der_ac_function
+from ActivationFunctions import sigmoid_fn as act_function
+from ActivationFunctions import sigmoid_fn_derivative as der_ac_function
 
 
 # Inference: x_tp = f(xt,ut)
