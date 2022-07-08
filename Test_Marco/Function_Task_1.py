@@ -1,6 +1,6 @@
 import numpy as np
-from ActivationFunctions import tanh as act_function
-from ActivationFunctions import tanh_derivative as der_ac_function
+from ActivationFunctions import ReluPlus as act_function
+from ActivationFunctions import ReluPlus_derivative as der_ac_function
 
 
 # Inference: x_tp = f(xt,ut)
@@ -137,13 +137,13 @@ def val_function(uu, x_test_vct, y_test, T, dim_layer, dim_test):
         predict = xx[-1,0]
         if y_test[image] == 1:
             counter_corr_label += 1
-        if (predict >= 0) and (y_test[image] == 1):
+        if (predict >= 0.5) and (y_test[image] == 1):
             correct_predict += 1
-        elif (predict < 0) and (y_test[image] == -1):
+        elif (predict < 0.5) and (y_test[image] == 0):
             correct_predict_not_lucky += 1
-        elif (predict < 0) and (y_test[image] == 1):
+        elif (predict < 0.5) and (y_test[image] == 1):
             false_negative += 1
-        elif (predict >= 0) and (y_test[image] == -1):
+        elif (predict >= 0.5) and (y_test[image] == 0):
             false_positive += 1
 
     print("The accuracy is {} % where:\n".format((correct_predict + correct_predict_not_lucky) / dim_test * 100))  # sum of first and second category expressed in percentage
