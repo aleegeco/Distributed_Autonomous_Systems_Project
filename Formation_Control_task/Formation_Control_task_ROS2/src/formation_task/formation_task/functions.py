@@ -154,28 +154,25 @@ def update_dynamics(dt: int, self):
             Pg_ij = self.Pg_stack_ii[node_j, :]  # set the Pg_ij* as a variable to make the code clearer
 
             if self.leader_acceleration:  # if leaders are moving we impose this dynamics
-                vel_dot_j = calc_derivative(self, node_j, dt) # numerical derivative for neighbors acceleration
+                vel_dot_j = calc_derivative(self, node_j, dt)  # numerical derivative for neighbors acceleration
                 pos_dot_i = vel_i
-                vel_dot_i += - np.linalg.inv(K_i)@(Pg_ij @ (self.k_p * (pos_i - pos_j) \
-                                                              + self.k_v * (vel_i - vel_j) - vel_dot_j))
                 if self.integral_action:  # if we want to apply the integral term
                     int_term = self.k_i*self.error_pos[self.agent_id, node_j, :]
-                    pos_dot_i = vel_i
                     vel_dot_i += - np.linalg.inv(K_i)@(Pg_ij@(self.k_p*(pos_i - pos_j) \
-                                            + self.k_v*(vel_i - vel_j)+ int_term - vel_dot_j)) + w_i
+                                                              + self.k_v*(vel_i - vel_j)+ int_term - vel_dot_j)) + w_i
+                else:
+                    pos_dot_i = vel_i
+                    vel_dot_i += - np.linalg.inv(K_i)@(Pg_ij @ (self.k_p * (pos_i - pos_j) \
+                                                                      + self.k_v * (vel_i - vel_j) - vel_dot_j))
             else:
                 pos_dot_i = vel_i
-                vel_dot_i += - Pg_ij@(self.k_p*(pos_i - pos_j) + self.k_v*(vel_i - vel_j))
-
                 if self.integral_action: # if we want to apply the integral term
                     int_term = self.k_i*self.error_pos[self.agent_id, node_j, :]
-                    pos_dot_i = vel_i
                     vel_dot_i += - (Pg_ij@(self.k_p*(pos_i - pos_j) + self.k_v*(vel_i - vel_j)+ int_term)) + w_i
-
+                else:
+                    vel_dot_i += - Pg_ij@(self.k_p*(pos_i - pos_j) + self.k_v*(vel_i - vel_j))
             x_dot_i = np.concatenate((pos_dot_i, vel_dot_i))
-
         x_i += dt * x_dot_i # forward euler to discretize the dynamics
-
     return x_i
 
 def calc_derivative(self, node_j, dt):
@@ -202,22 +199,3 @@ def piecewise_acc(self):
     acc_t = acc[self.tt]
     acc_t = np.ones(dd)*acc_t
     return acc_t
-
-# def saturation(self, node_j):
-#     n_x = np.shape(self.x_i)[0] # dimension of the state vector
-#     dd = n_x//2 # dimension of position and velocity vector
-#     err_x = self.k_i*self.error_pos[self.agent_id, node_j, 0]
-#     err_y = self.k_i*self.error_pos[self.agent_id, node_j, 1]
-#
-#     # if err_x > self.max_error:
-#     #     err_x = self.max_error
-#     # if err_x < - self.max_error:
-#     #     err_x = - self.max_error
-#     #
-#     # if err_y > self.max_error:
-#     #     err_y = self.max_error
-#     # if err_y < - self.max_error:
-#     #     err_y = - self.max_error
-#
-#     error = np.array([err_x, err_y]).reshape((dd))
-#     return error

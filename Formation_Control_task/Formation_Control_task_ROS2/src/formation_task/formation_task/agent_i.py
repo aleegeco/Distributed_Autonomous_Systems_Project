@@ -43,8 +43,6 @@ class Agent(Node):
         self.error_pos = np.zeros((self.NN, self.NN, dd))
         self.integral_action = self.get_parameter('integral_action').value
 
-        self.max_error = 10
-
         self.max_iters = self.get_parameter('max_iters').value
         self.communication_time = self.get_parameter('communication_time').value
 
