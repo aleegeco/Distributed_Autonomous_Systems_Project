@@ -7,6 +7,7 @@ from Function_Task_1 import *
 from imblearn.under_sampling import RandomUnderSampler
 from collections import Counter
 from Function_Task_1 import BCE as cost_function
+
 # np.random.seed(0)  # generate random number (always the same seed)
 
 PRINT = True
@@ -134,7 +135,7 @@ if BALANCING:
     if FIGURE:
         plt.figure()
         for i in range(100):
-            plt.subplot(10,10,i+1)
+            plt.subplot(10, 10, i + 1)
             plt.xticks([])
             plt.yticks([])
             plt.grid(False)
@@ -166,17 +167,16 @@ dim_layer = d[0]  # number of neurons considering bias
 ## ALGORITHM ##
 # uu[agent, iteration, layer, neuron, neuron + bias]
 uu = np.zeros((NN, max_iters, T - 1, dim_layer, dim_layer + 1))  # +1 means bias
-uu[:,0,:,:,:] = np.random.randn(NN, T-1, dim_layer, dim_layer +1)*10
+uu[:, 0, :, :, :] = np.random.randn(NN, T - 1, dim_layer, dim_layer + 1) * 10
 yy = np.zeros((NN, max_iters, T - 1, dim_layer, dim_layer + 1))
 delta_u = np.zeros((NN, max_iters, T - 1, dim_layer, dim_layer + 1))  # +1 means bias
 
 JJ = np.zeros((NN, max_iters))
 delta_u_store = np.zeros((NN, max_iters))
 
-
 ## ITERATION 0 - Initialization of Gradient of u
 for agent in range(NN):
-    print("Agent {}, iter = {}".format(agent, 0))
+    #print("Agent {}, iter = {}".format(agent, 0))
     for image in range(dim_train_agent):
         # Data Set
         temp_data = data_point[agent, image, :]
@@ -185,31 +185,32 @@ for agent in range(NN):
         # Neural Network
         xx = forward_pass(uu[agent, 0], temp_data, T, dim_layer)
 
-        JJ_temp, dJJ_temp = cost_function(xx[-1,0], temp_label)
+        JJ_temp, dJJ_temp = cost_function(xx[-1, 0], temp_label)
         lambda_T = dJJ_temp
         JJ[agent, 0] += JJ_temp
 
-        delta_u[agent,0] += backward_pass(xx, uu[agent, 0], lambda_T, T, dim_layer)
-
+        delta_u[agent, 0] += backward_pass(xx, uu[agent, 0], lambda_T, T, dim_layer)
         # ## Start Gradient Tracking
         # for layer in range(T - 1):
         #     delta_u[agent, 0, layer] += delta_u[agent,0,layer]
-    yy[agent, 0] = delta_u[agent,0]
+    yy[agent, 0] = delta_u[agent, 0]
     # for layer in range(T - 1):
     uu[agent, 1] += WW[agent, agent] * uu[agent, 0] - stepsize * delta_u[agent, 0]
 
+print(f' Iteration: {0:3d}, Loss Function: {np.sum(JJ[:, 0]):4.3f}')
+
 # ALGORITHM STARTING FROM k = 1
-for iter in range(1, max_iters-1):
+for iter in range(1, max_iters - 1):
     for agent in range(NN):
-        print("Agent {}, iter = {}".format(agent, iter))
+        #print("Agent {}, iter = {}".format(agent, iter))
         for image in range(dim_train_agent):
             temp_data = data_point[agent, image, :]
             temp_label = label_point[agent, image]
 
             xx = forward_pass(uu[agent, iter], temp_data, T, dim_layer)
 
-
             JJ_temp, dJJ_temp = cost_function(xx[-1, 0], temp_label)
+
             JJ[agent, iter] += JJ_temp
             lambda_T = dJJ_temp
 
@@ -221,29 +222,30 @@ for iter in range(1, max_iters-1):
 
     ## Gradient Tracking
     for agent in range(NN):
-            # for layer in range(T - 1):
-        yy[agent, iter+1] = WW[agent, agent] * yy[agent, iter] - stepsize*(delta_u[agent, iter+1] - delta_u[agent, iter])
+        # for layer in range(T - 1):
+        yy[agent, iter + 1] = WW[agent, agent] * yy[agent, iter] - stepsize * (
+                    delta_u[agent, iter + 1] - delta_u[agent, iter])
         for neigh in G.neighbors(agent):
-            yy[agent, iter+1] = WW[agent, neigh] * yy[neigh, iter]
+            yy[agent, iter + 1] = WW[agent, neigh] * yy[neigh, iter]
 
         uu[agent, iter + 1] = WW[agent, agent] * uu[agent, iter] - stepsize * yy[agent, iter]
         for neigh in G.neighbors(agent):
             uu[agent, iter + 1] += WW[agent, neigh] * uu[neigh, iter]
 
+    print(f' Iteration: {iter:3d}, Loss Function: {np.sum(JJ[:, iter]):4.3f}')
 
 if SAVE:
     np.save('store_data/max_iter.npy', max_iters, allow_pickle=True)
     np.save('store_data/NN.npy', NN, allow_pickle=True)
     np.save('store_data/JJ.npy', JJ, allow_pickle=True)
     np.save('store_data/delta_u.npy', delta_u, allow_pickle=True)
-    np.save('store_data/uu.npy',uu, allow_pickle=True)
-    np.save('store_data/yy.npy',yy, allow_pickle=True)
+    np.save('store_data/uu.npy', uu, allow_pickle=True)
+    np.save('store_data/yy.npy', yy, allow_pickle=True)
     np.save('store_data/y_test.npy', y_test, allow_pickle=True)
     np.save('store_data/x_test_vct', x_test_vct, allow_pickle=True)
 
-
 plt.figure()
-plt.plot(range(max_iters-1), (JJ[0,:-1]))
+plt.plot(range(max_iters - 1), (JJ[0, :-1]))
 plt.title("Cost function over iterations")
 plt.grid()
 
@@ -252,6 +254,6 @@ plt.grid()
 # plt.title("Gradient of Cost function")
 # plt.grid()
 
-val_function(uu[0,-1], x_test_vct, y_test, T, dim_layer, dim_test_agent)
+val_function(uu[0, -1], x_test_vct, y_test, T, dim_layer, dim_test_agent)
 
 print('DAJE TUTTO OK')
