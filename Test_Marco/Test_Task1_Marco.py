@@ -8,7 +8,7 @@ from imblearn.under_sampling import RandomUnderSampler
 from collections import Counter
 from Function_Task_1 import MSE as cost_function
 
-# np.random.seed(0)  # generate random number (always the same seed)
+np.random.seed(0)  # generate random number (always the same seed)
 
 PRINT = True
 FIGURE = False
