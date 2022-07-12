@@ -8,7 +8,7 @@ from imblearn.under_sampling import RandomUnderSampler
 from collections import Counter
 from Function_Task_1 import MSE as cost_function
 
-#np.random.seed(0) # generate random number (always the same seed)
+np.random.seed(0) # generate random number (always the same seed)
 
 
 BALANCING = True
@@ -37,6 +37,7 @@ T = len(d)  # how much layer we have
 dim_layer = d[0]  # number of neurons considering bias
 
 stepsize = 0.01
+n_images = 100
 
 # we associate -1 (or 0) to data which not represent the number we want to classify
 for i in range(0, np.shape(y_train)[0]):
@@ -78,6 +79,8 @@ if BALANCING:
         plt.show()
 
 uu = np.random.randn(T-1, dim_layer, dim_layer+1)
+uu[-1, 1:] = 0
+#uu = np.zeros((T-1, dim_layer, dim_layer+1))
 delta_u_store = np.zeros(epochs)
 Delta_u = 0
 J = np.zeros(epochs)
@@ -85,9 +88,9 @@ J = np.zeros(epochs)
 
 for k in range(epochs):
     Delta_u = 0
-    #stepsize = 1/(k+1)
-    for image in range(500):
-        temp_data = x_test_vct[image]
+    stepsize = 1/(k+1)
+    for image in range(n_images):
+        temp_data = x_train_vct[image]
         temp_label = y_train[image]
 
         xx = forward_pass(uu, temp_data, T, dim_layer)

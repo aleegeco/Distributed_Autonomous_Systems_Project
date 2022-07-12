@@ -117,7 +117,7 @@ def backward_pass(xx, uu, llambdaT, T, d):
 
 
 def MSE(predicted: int, label: int):
-    J = (predicted - label)**2
+    J = np.linalg.norm(predicted - label)**2
     grad_J = 2 * (predicted - label)
     return J, grad_J
 
