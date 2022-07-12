@@ -8,20 +8,18 @@ from imblearn.under_sampling import RandomUnderSampler
 from collections import Counter
 from Function_Task_1 import MSE as cost_function
 
-
-
 np.random.seed(0) # generate random number (always the same seed)
 
 
 BALANCING = True
 FIGURE = False
-DIMINISHING = False
+DIMINISHING = True
 
 # chosen digit to wor
 LuckyNumber = 6
 
 epochs = 30
-stepsize = 0.0001
+stepsize = 0.01
 
 # Data acquisition and processing
 (x_train, y_train), (x_test, y_test) = mnist.load_data()
@@ -35,7 +33,7 @@ x_train = x_train / 255
 x_test = x_test / 255
 
 #  Set Up the Neural Network
-d = [784, 784, 784, 784]
+d = [784, 784, 784]
 T = len(d)  # how much layer we have
 dim_layer = d[0]  # number of neurons considering bias
 
@@ -93,8 +91,7 @@ J = np.zeros(epochs)
 for k in range(epochs):
     Delta_u = 0
     if DIMINISHING:
-        stepsize = 1/(2*(k+1))
-
+        stepsize = 1/(k+1)
     for image in range(n_images):
         temp_data = x_train_vct[image]
         temp_label = y_train[image]
