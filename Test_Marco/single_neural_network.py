@@ -69,3 +69,12 @@ if BALANCING:
             plt.imshow(np.reshape(x_train_vct[i], (28, 28)))
             plt.xlabel(y_train[i])
         plt.show()
+
+
+for k in range(epochs):
+    for image in range(len(x_test_vct)):
+        temp_data = x_test_vct[image]
+        temp_label = y_train[image]
+
+        lambdaT = cost_function(xx)
+        xx = forward_pass(uu[k])
