@@ -61,9 +61,10 @@ def adjoint_dynamics(ltp, xt, ut, d, t, T):
               delta_ut loss gradient wrt u_t
     """
     df_dx = np.zeros((d, d))
+    df_du = np.zeros((d, (d+1)))
 
-    # df_du = np.zeros((d,(d+1)*d))
     Delta_ut = np.zeros((d, d + 1))
+
     if t == T-2:
         dsigma_j = der_ac_function(xt @ ut[0, 1:] + ut[0, 0])
 
@@ -79,11 +80,11 @@ def adjoint_dynamics(ltp, xt, ut, d, t, T):
             dsigma_j = der_ac_function(xt @ ut[j, 1:] + ut[j, 0])
 
             df_dx[:, j] = ut[j, 1:] * dsigma_j
-            # df_du[j, XX] = dsigma_j*np.hstack([1,xt])
+            df_du[j, :] = np.hstack([1, xt])*dsigma_j
 
             # B'@ltp
-            Delta_ut[j, 0] = ltp[j] * dsigma_j
-            Delta_ut[j, 1:] = xt * ltp[j] * dsigma_j
+            Delta_ut[j, 0] = df_du[j, 0]*ltp[j]
+            Delta_ut[j, 1:] = df_du[j, 1:]*ltp[j]
 
     lt = df_dx @ ltp  # A'@ltp
     # Delta_ut = df_du@ltp
