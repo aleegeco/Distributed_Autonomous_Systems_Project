@@ -80,11 +80,11 @@ def adjoint_dynamics(ltp, xt, ut, d, t, T):
             dsigma_j = der_ac_function(xt @ ut[j, 1:] + ut[j, 0])
 
             df_dx[:, j] = ut[j, 1:] * dsigma_j
-            df_du[j, :] = np.hstack([1, xt])*dsigma_j
+            # df_du[j, :] = np.hstack([1, xt])*dsigma_j
 
             # B'@ltp
-            Delta_ut[j, 0] = df_du[j, 0]*ltp[j]
-            Delta_ut[j, 1:] = df_du[j, 1:]*ltp[j]
+            Delta_ut[j, 0] = ltp[j]*dsigma_j
+            Delta_ut[j, 1:] = xt*ltp[j]*dsigma_j
 
     lt = df_dx @ ltp  # A'@ltp
     # Delta_ut = df_du@ltp
