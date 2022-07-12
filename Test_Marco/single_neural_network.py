@@ -114,3 +114,32 @@ _, ax = plt.subplots()
 ax.plot(range(epochs), delta_u_store)
 ax.title.set_text('delta_u')
 plt.show()
+
+counter_corr_label = 0
+correct_predict = 0
+correct_predict_not_lucky = 0
+false_positive = 0
+false_negative = 0
+for image in range(n_images):
+    xx = forward_pass(uu, x_test_vct[image], T, dim_layer)
+    predict = xx[-1, 0]
+    if y_test[image] == 1:
+        counter_corr_label += 1
+    if (predict >= 0.5) and (y_test[image] == 1):
+        correct_predict += 1
+    elif (predict < 0.5) and (y_test[image] == 0):
+        correct_predict_not_lucky += 1
+    elif (predict < 0.5) and (y_test[image] == 1):
+        false_negative += 1
+    elif (predict >= 0.5) and (y_test[image] == 0):
+        false_positive += 1
+
+print("The accuracy is {} % where:\n".format((
+                                                         correct_predict + correct_predict_not_lucky) / n_images * 100))  # sum of first and second category expressed in percentage
+print("\tFalse positives {} \n".format(false_positive))  # third category ( false positive)
+print("\tFalse negatives {} \n".format(false_negative))  # fourth category ( false negative)
+print("\tNumber of times LuckyNumber has been identified correctly {} over {} \n".format(correct_predict,
+                                                                                         n_images))  # first category ( images associated to lable 1 predicted correctly )
+print("\tNumber of times not LuckyNumber has been identified correctly {} over {} \n".format(correct_predict_not_lucky,
+                                                                                             n_images))  # first category ( images associated to lable 1 predicted correctly )
+print("The effective LuckyNumbers in the tests are: {}".format(counter_corr_label))
