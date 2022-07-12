@@ -8,16 +8,16 @@ from imblearn.under_sampling import RandomUnderSampler
 from collections import Counter
 from Function_Task_1 import MSE as cost_function
 
-np.random.seed(0) # generate random number (always the same seed)
+#np.random.seed(0) # generate random number (always the same seed)
 
 
 BALANCING = True
-FIGURE =True
+FIGURE =False
 
 # chosen digit to wor
 LuckyNumber = 6
 
-epochs = 40
+epochs = 30
 stepsize = 0.01
 
 # Data acquisition and processing
@@ -30,6 +30,13 @@ y_test = y_test.astype(np.int8)
 # scale the brightness of each pixel because otherwise saturates the activation function
 x_train = x_train / 255
 x_test = x_test / 255
+
+#  Set Up the Neural Network
+d = [784, 784, 784]
+T = len(d)  # how much layer we have
+dim_layer = d[0]  # number of neurons considering bias
+
+stepsize = 0.01
 
 # we associate -1 (or 0) to data which not represent the number we want to classify
 for i in range(0, np.shape(y_train)[0]):
@@ -70,11 +77,37 @@ if BALANCING:
             plt.xlabel(y_train[i])
         plt.show()
 
+uu = np.random.randn(T-1, dim_layer, dim_layer+1)
+delta_u_store = np.zeros(epochs)
+Delta_u = 0
+J = np.zeros(epochs)
+
 
 for k in range(epochs):
-    for image in range(len(x_test_vct)):
+    Delta_u = 0
+    #stepsize = 1/(k+1)
+    for image in range(500):
         temp_data = x_test_vct[image]
         temp_label = y_train[image]
 
-        lambdaT = cost_function(xx)
-        xx = forward_pass(uu[k])
+        xx = forward_pass(uu, temp_data, T, dim_layer)
+
+        J_temp, lambdaT = cost_function(xx[-1, 0], temp_label)
+        J[k] += J_temp
+        Delta_u += backward_pass(xx, uu, lambdaT, T, dim_layer)
+
+    delta_u_store[k] = np.linalg.norm(Delta_u)
+    uu = uu - stepsize * Delta_u
+
+    print(f'Iteration: {k} Loss function: {J[k]:4.3f} Delta_u: {delta_u_store[k]:4.3f}')
+
+
+_, ax = plt.subplots()
+ax.plot(range(epochs), J)
+ax.title.set_text('J')
+plt.show()
+
+_, ax = plt.subplots()
+ax.plot(range(epochs), delta_u_store)
+ax.title.set_text('delta_u')
+plt.show()
