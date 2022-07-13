@@ -1,5 +1,3 @@
-import numpy as np
-import pandas as pd
 from keras.datasets import mnist
 from sklearn.model_selection import train_test_split
 import matplotlib.pyplot as plt  # this library will be used for data visualization
@@ -15,11 +13,12 @@ np.random.seed(0) # generate random number (always the same seed)
 BALANCING = True
 FIGURE =False
 PRINT = True
+SAVE = True
 # chosen digit to wor
 LuckyNumber = 6
 
 epochs = 50
-stepsize = 0.001
+stepsize = 0.005
 # stepsize = 1/(k+1)
 
 # Graph parameters
@@ -138,16 +137,17 @@ uu[:, :, -1, 1:] = 0
 zz = np.zeros_like(uu)
 delta_u = np.zeros_like(uu)
 
-#delta_u_norm = np.zeros((epochs, NN))
-
 J = np.zeros((epochs, NN))
 
-print('k \t J[0]\t Delta_U[0]\t J[1]\t Delta_U[1]\t ')
-print('---------------------------------------------------------')
+print(f'k\t', end='')
+for agent in range(NN):
+    if agent == NN-1:
+        print(f'J[{agent}]\t d_u[{agent}]\t')
+    else:
+        print(f'J[{agent}]\t d_u[{agent}]\t', end='\t')
 
 for k in range(epochs-1):
     for agent in range(NN):
-        #Delta_u = 0
         for image in range(dim_train_agent):
             temp_data = data_train[agent, image]
             temp_label = label_train[agent, image]
@@ -159,6 +159,7 @@ for k in range(epochs-1):
             temp_delta_u = backward_pass(xx, uu[k, agent], lambdaT, T, dim_layer)
             delta_u[k, agent] += temp_delta_u
 
+    print(f'{k}\t', end='')
     for agent in range(NN):
         uu[k+1, agent] = WW[agent, agent]*uu[k, agent]
         for neigh in G.neighbors(agent):
@@ -168,9 +169,20 @@ for k in range(epochs-1):
         zz[k+1, agent] = WW[agent, agent]*zz[k, agent] - stepsize*(WW[agent, agent]*delta_u[k, agent] - delta_u[k, agent])
         for neigh in G.neighbors(agent):
             zz[k+1, agent] += WW[agent, neigh]*zz[k, neigh] - stepsize*WW[agent, neigh]*delta_u[k, neigh]
-        zz[k+1, agent] -= stepsize*delta_u[k, agent]
+        zz[k+1, agent] -= stepsize*delta_u[k, agent]  # not sure that this is needed
 
-    print(f'{k}\t {J[k, 0]:4.2f}\t {np.linalg.norm(delta_u[k, 0]):4.2f}\t {J[k, 1]:4.2f}\t {np.linalg.norm(delta_u[k, 1]):4.2f}\t')
+        if agent == NN - 1:
+            print(f'{J[k, agent]:4.2f}\t {np.linalg.norm(delta_u[k, agent]):4.2f}\t')
+        else:
+            print(f'{J[k, agent]:4.2f}\t {np.linalg.norm(delta_u[k, agent]):4.2f}\t', end='\t')
+
+if SAVE:
+    np.save('store_data/epochs.npy', epochs, allow_pickle=True)
+    np.save('store_data/NN.npy', NN, allow_pickle=True)
+    np.save('store_data/JJ.npy', J, allow_pickle=True)
+    np.save('store_data/delta_u.npy', delta_u, allow_pickle=True)
+    np.save('store_data/uu.npy', uu, allow_pickle=True)
+
 
 
 _, ax = plt.subplots()
@@ -184,3 +196,6 @@ plt.show()
 # plt.show()
 
 val_function(uu, data_test, label_test, dim_test_agent, NN, dim_layer, T)
+
+
+print('DAJE TUTTO OK')
