@@ -6,7 +6,7 @@ import networkx as nx  # library for network creation/visualization/manipulation
 from Function_Task_1 import *
 from imblearn.under_sampling import RandomUnderSampler
 from collections import Counter
-from Function_Task_1 import MSE as cost_function
+from Function_Task_1 import BCE as cost_function
 
 np.random.seed(0)  # generate random number (always the same seed)
 
