@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 from keras.datasets import mnist
 from sklearn.model_selection import train_test_split
 import matplotlib.pyplot as plt  # this library will be used for data visualization
@@ -7,7 +8,6 @@ from Function_Task_1 import *
 from imblearn.under_sampling import RandomUnderSampler
 from collections import Counter
 from Function_Task_1 import MSE as cost_function
-from tabulate import tabulate
 
 np.random.seed(0) # generate random number (always the same seed)
 
@@ -18,14 +18,15 @@ PRINT = True
 # chosen digit to wor
 LuckyNumber = 6
 
-epochs = 40
+epochs = 50
 stepsize = 0.001
 # stepsize = 1/(k+1)
 
 # Graph parameters
-NN = 2
+NN = 4
 p_ER = 0.4
 I_NN = np.identity(NN, dtype=int)  # necessary to build the Adj
+
 dim_train_agent = 200
 dim_test_agent = int(0.3*dim_train_agent)
 
@@ -158,58 +159,28 @@ for k in range(epochs-1):
             temp_delta_u = backward_pass(xx, uu[k, agent], lambdaT, T, dim_layer)
             delta_u[k, agent] += temp_delta_u
 
-        #delta_u_norm[k, agent] = np.linalg.norm(Delta_u)
-
     for agent in range(NN):
-        uu[k+1, agent] = WW[agent, agent]*uu[k, agent] + zz[k, agent] - stepsize*delta_u[k, agent]
+        uu[k+1, agent] = WW[agent, agent]*uu[k, agent]
         for neigh in G.neighbors(agent):
             uu[k+1, agent] += WW[agent, neigh]*uu[k, neigh]
+        uu[k+1, agent] += zz[k, agent] - stepsize*delta_u[k, agent]
 
         zz[k+1, agent] = WW[agent, agent]*zz[k, agent] - stepsize*(WW[agent, agent]*delta_u[k, agent] - delta_u[k, agent])
         for neigh in G.neighbors(agent):
-            zz[k+1] += WW[agent, neigh]*zz[k, neigh] - stepsize*(WW[agent, neigh]*delta_u[k, neigh] - delta_u[k, agent])
+            zz[k+1, agent] += WW[agent, neigh]*zz[k, neigh] - stepsize*WW[agent, neigh]*delta_u[k, neigh]
+        zz[k+1, agent] -= stepsize*delta_u[k, agent]
 
     print(f'{k}\t {J[k, 0]:4.2f}\t {np.linalg.norm(delta_u[k, 0]):4.2f}\t {J[k, 1]:4.2f}\t {np.linalg.norm(delta_u[k, 1]):4.2f}\t')
 
 
-
 _, ax = plt.subplots()
-ax.semilogy(range(epochs), J)
+ax.plot(range(epochs), J)
 ax.title.set_text('J')
 plt.show()
 
-_, ax = plt.subplots()
-ax.semilogy(range(epochs), delta_u_norm)
-ax.title.set_text('delta_u')
-plt.show()
+# _, ax = plt.subplots()
+# ax.plot(range(epochs), np.linalg.norm(delta_u))
+# ax.title.set_text('delta_u')
+# plt.show()
 
-counter_corr_label = 0
-correct_predict = 0
-correct_predict_not_lucky = 0
-false_positive = 0
-false_negative = 0
-agent = 0
-for image in range(dim_test_agent):
-    xx = forward_pass(uu[-1, agent], data_test[agent, image], T, dim_layer)
-    predict = xx[-1, 0]
-
-    if y_test[image] == 1:
-        counter_corr_label += 1
-    if (predict >= 0.5) and (label_test[agent, image] == 1):
-        correct_predict += 1
-    elif (predict < 0.5) and (label_test[agent, image] == 0):
-        correct_predict_not_lucky += 1
-    elif (predict < 0.5) and (label_test[agent, image] == 1):
-        false_negative += 1
-    elif (predict >= 0.5) and (label_test[agent,image] == 0):
-        false_positive += 1
-
-print("The accuracy is {} % where:\n".format((
-                                                         correct_predict + correct_predict_not_lucky) / dim_test_agent * 100))  # sum of first and second category expressed in percentage
-print("\tFalse positives {} \n".format(false_positive))  # third category ( false positive)
-print("\tFalse negatives {} \n".format(false_negative))  # fourth category ( false negative)
-print("\tNumber of times LuckyNumber has been identified correctly {} over {} \n".format(correct_predict,
-                                                                                         dim_test_agent))  # first category ( images associated to lable 1 predicted correctly )
-print("\tNumber of times not LuckyNumber has been identified correctly {} over {} \n".format(correct_predict_not_lucky,
-                                                                                             dim_test_agent))  # first category ( images associated to lable 1 predicted correctly )
-print("The effective LuckyNumbers in the tests are: {}".format(counter_corr_label))
+val_function(uu, data_test, label_test, dim_test_agent, NN, dim_layer, T)
