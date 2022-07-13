@@ -17,11 +17,11 @@ FIGURE =False
 # chosen digit to wor
 LuckyNumber = 6
 
-epochs = 40
+epochs = 50
 stepsize = 0.01
 # stepsize = 1/(k+1)
 NN = 2
-dim_train_agent = 150
+dim_train_agent = 200
 dim_test_agent = int(0.2*dim_train_agent)
 
 # Data acquisition and processing
@@ -64,8 +64,8 @@ if BALANCING:
     x_train_vct, y_train = rus.fit_resample(x_train_vct, y_train)
     x_test_vct, y_test = rus.fit_resample(x_test_vct, y_test)
 
-    x_train_vct, _, y_train, _ = train_test_split(x_train_vct, y_train, test_size=0.01)
-    x_test_vct, _, y_test, _ = train_test_split(x_test_vct, y_test, test_size=0.01)
+    x_train_vct, _, y_train, _ = train_test_split(x_train_vct, y_train, test_size=0.01, shuffle=True)
+    x_test_vct, _, y_test, _ = train_test_split(x_test_vct, y_test, test_size=0.01, shuffle=True)
 
     print('Resampled dataset shape %s' % Counter(y_train))
 
@@ -97,7 +97,7 @@ for agent in range(NN):
     label_test[agent, :] = y_test[agent_index]
 
 uu = np.random.randn(epochs, NN, T-1, dim_layer, dim_layer+1)
-uu[-1, 1:] = 0
+uu[:, :, -1, 1:] = 0
 delta_u_store = np.zeros((epochs, NN))
 Delta_u = 0
 J = np.zeros((epochs, NN))
@@ -121,41 +121,17 @@ for k in range(epochs-1):
 
 
 _, ax = plt.subplots()
-ax.semilogy(range(epochs), J)
-ax.title.set_text('J')
+ax.plot(range(epochs), J)
+ax.title.set_text('$J$')
+# ax.xlabel("iterations")
+# ax.ylabel("$J(.)$")
 plt.show()
 
 _, ax = plt.subplots()
-ax.semilogy(range(epochs), delta_u_store)
-ax.title.set_text('delta_u')
+ax.plot(range(epochs), delta_u_store)
+ax.title.set_text('$\Delta u$')
+# ax.xlabel("iterations")
+# ax.ylabel("$\Delta u$")
 plt.show()
 
-counter_corr_label = 0
-correct_predict = 0
-correct_predict_not_lucky = 0
-false_positive = 0
-false_negative = 0
-agent = 0
-for image in range(dim_test_agent):
-    xx = forward_pass(uu[-1, agent], x_test_vct[agent, image], T, dim_layer)
-    predict = xx[-1, 0]
-    if y_test[image] == 1:
-        counter_corr_label += 1
-    if (predict >= 0.5) and (y_test[image] == 1):
-        correct_predict += 1
-    elif (predict < 0.5) and (y_test[image] == 0):
-        correct_predict_not_lucky += 1
-    elif (predict < 0.5) and (y_test[image] == 1):
-        false_negative += 1
-    elif (predict >= 0.5) and (y_test[image] == 0):
-        false_positive += 1
-
-print("The accuracy is {} % where:\n".format((
-                                                         correct_predict + correct_predict_not_lucky) / dim_test_agent * 100))  # sum of first and second category expressed in percentage
-print("\tFalse positives {} \n".format(false_positive))  # third category ( false positive)
-print("\tFalse negatives {} \n".format(false_negative))  # fourth category ( false negative)
-print("\tNumber of times LuckyNumber has been identified correctly {} over {} \n".format(correct_predict,
-                                                                                         dim_test_agent))  # first category ( images associated to lable 1 predicted correctly )
-print("\tNumber of times not LuckyNumber has been identified correctly {} over {} \n".format(correct_predict_not_lucky,
-                                                                                             dim_test_agent))  # first category ( images associated to lable 1 predicted correctly )
-print("The effective LuckyNumbers in the tests are: {}".format(counter_corr_label))
+val_function(uu, data_test, label_test, dim_test_agent, NN, dim_layer, T)
