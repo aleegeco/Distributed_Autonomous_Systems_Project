@@ -126,31 +126,36 @@ def BCE(predicted: int, label: int):
     grad_J = - (label / (predicted + 1e-10) - (1 - label) / (1 - predicted + 1e-10))
     return J, grad_J
 
+def val_function(uu, data_test, label_test, dim_test_agent, NN, dim_layer, T):
 
-def val_function(uu, x_test_vct, y_test, T, dim_layer, dim_test):
-    counter_corr_label = 0
-    correct_predict = 0
-    correct_predict_not_lucky = 0
-    false_positive = 0
-    false_negative = 0
-    for image in range(dim_test):
-        xx = forward_pass(uu, x_test_vct[image, :], T, dim_layer)
-        predict = xx[-1,0]
-        if y_test[image] == 1:
-            counter_corr_label += 1
-        if (predict >= 0.5) and (y_test[image] == 1):
-            correct_predict += 1
-        elif (predict < 0.5) and (y_test[image] == 0):
-            correct_predict_not_lucky += 1
-        elif (predict < 0.5) and (y_test[image] == 1):
-            false_negative += 1
-        elif (predict >= 0.5) and (y_test[image] == 0):
-            false_positive += 1
+    for agent in range(NN):
+        counter_corr_label = 0
+        correct_predict = 0
+        correct_predict_not_lucky = 0
+        false_positive = 0
+        false_negative = 0
+        for image in range(dim_test_agent):
+            xx = forward_pass(uu[-1, agent], data_test[agent, image], T, dim_layer)
+            predict = xx[-1, 0]
+            if label_test[agent, image] == 1:
+                counter_corr_label += 1
+            if (predict >= 0.5) and (label_test[agent, image] == 1):
+                correct_predict += 1
+            elif (predict < 0.5) and (label_test[agent, image] == 0):
+                correct_predict_not_lucky += 1
+            elif (predict < 0.5) and (label_test[agent, image] == 1):
+                false_negative += 1
+            elif (predict >= 0.5) and (label_test[agent, image] == 0):
+                false_positive += 1
 
-    print("The accuracy is {} % where:\n".format((correct_predict + correct_predict_not_lucky) / dim_test * 100))  # sum of first and second category expressed in percentage
-    print("\tFalse positives {} \n".format(false_positive))  # third category ( false positive)
-    print("\tFalse negatives {} \n".format(false_negative))  # fourth category ( false negative)
-    print("\tNumber of times LuckyNumber has been identified correctly {} over {} \n".format(correct_predict, dim_test))  # first category ( images associated to lable 1 predicted correctly )
-    print("\tNumber of times not LuckyNumber has been identified correctly {} over {} \n".format(correct_predict_not_lucky, dim_test))  # first category ( images associated to lable 1 predicted correctly )
-    print("The effective LuckyNumbers in the tests are: {}".format(counter_corr_label))
+        print("AGENT {} \n".format(agent))
+        print("The accuracy is {} % where:\n".format((correct_predict + correct_predict_not_lucky) / dim_test_agent * 100))  # sum of first and second category expressed in percentage
+        print("\tFalse positives {} \n".format(false_positive))  # third category ( false positive)
+        print("\tFalse negatives {} \n".format(false_negative))  # fourth category ( false negative)
+        print("\tNumber of times LuckyNumber has been identified correctly {} over {} \n".format(correct_predict,
+                                                                                                 dim_test_agent))  # first category ( images associated to lable 1 predicted correctly )
+        print("\tNumber of times not LuckyNumber has been identified correctly {} over {} \n".format(correct_predict_not_lucky,
+                                                                                                     dim_test_agent))  # first category ( images associated to lable 1 predicted correctly )
+        print("The effective LuckyNumbers in the tests are: {}".format(counter_corr_label))
+
     return None
