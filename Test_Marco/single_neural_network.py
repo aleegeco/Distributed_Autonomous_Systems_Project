@@ -6,7 +6,7 @@ import networkx as nx  # library for network creation/visualization/manipulation
 from Function_Task_1 import *
 from imblearn.under_sampling import RandomUnderSampler
 from collections import Counter
-from Function_Task_1 import MSE as cost_function
+from Function_Task_1 import BCE as cost_function
 
 np.random.seed(0) # generate random number (always the same seed)
 
@@ -17,8 +17,12 @@ FIGURE =False
 # chosen digit to wor
 LuckyNumber = 6
 
-epochs = 30
+epochs = 40
 stepsize = 0.01
+# stepsize = 1/(k+1)
+NN = 5
+dim_train_agent = 100
+dim_test_agent = int(0.2*dim_train_agent)
 
 # Data acquisition and processing
 (x_train, y_train), (x_test, y_test) = mnist.load_data()
@@ -32,12 +36,10 @@ x_train = x_train / 255
 x_test = x_test / 255
 
 #  Set Up the Neural Network
-d = [784, 784, 784]
+d = [784, 784, 784, 784]
 T = len(d)  # how much layer we have
 dim_layer = d[0]  # number of neurons considering bias
 
-stepsize = 0.01
-n_images = 100
 
 # we associate -1 (or 0) to data which not represent the number we want to classify
 for i in range(0, np.shape(y_train)[0]):
@@ -78,31 +80,44 @@ if BALANCING:
             plt.xlabel(y_train[i])
         plt.show()
 
-uu = np.random.randn(T-1, dim_layer, dim_layer+1)
-uu[-1, 1:] = 0
-#uu = np.zeros((T-1, dim_layer, dim_layer+1))
-delta_u_store = np.zeros(epochs)
-Delta_u = 0
-J = np.zeros(epochs)
+data_train = np.zeros((NN, dim_train_agent, np.shape(x_train_vct)[1]))
+label_train = np.zeros((NN, dim_train_agent))
 
+data_test = np.zeros((NN, dim_test_agent, np.shape(x_test_vct)[1]))
+label_test = np.zeros((NN, dim_test_agent))
+
+# data_validation, label_validation
+for agent in range(NN):
+    agent_index = agent * dim_train_agent + np.arange(dim_train_agent)
+    data_train[agent, :, :] = x_train_vct[agent_index, :]
+    label_train[agent, :] = y_train[agent_index]
+
+    agent_index = agent * dim_test_agent + np.arange(dim_test_agent)
+    data_test[agent, :, :] = x_test_vct[agent_index, :]
+    label_test[agent, :] = y_test[agent_index]
+
+uu = np.random.randn(epochs, NN, T-1, dim_layer, dim_layer+1)
+uu[-1, 1:] = 0
+delta_u_store = np.zeros((epochs, NN))
+Delta_u = 0
+J = np.zeros((epochs, NN))
 
 for k in range(epochs):
-    Delta_u = 0
-    stepsize = 1/(k+1)
-    for image in range(n_images):
-        temp_data = x_train_vct[image]
-        temp_label = y_train[image]
+    for agent in range(NN):
+        Delta_u = 0
+        for image in range(dim_train_agent):
+            temp_data = data_train[agent, image]
+            temp_label = label_train[agent, image]
 
-        xx = forward_pass(uu, temp_data, T, dim_layer)
+            xx = forward_pass(uu[k, agent], temp_data, T, dim_layer)
 
-        J_temp, lambdaT = cost_function(xx[-1, 0], temp_label)
-        J[k] += J_temp
-        Delta_u += backward_pass(xx, uu, lambdaT, T, dim_layer)
+            J_temp, lambdaT = cost_function(xx[-1, 0], temp_label)
+            J[k, agent] += J_temp
+            Delta_u += backward_pass(xx, uu[k, agent], lambdaT, T, dim_layer)
 
-    delta_u_store[k] = np.linalg.norm(Delta_u)
-    uu = uu - stepsize * Delta_u
-
-    print(f'Iteration: {k} Loss function: {J[k]:4.3f} Delta_u: {delta_u_store[k]:4.3f}')
+        delta_u_store[k, agent] = np.linalg.norm(Delta_u)
+        uu[k, agent] = uu[k, agent] - stepsize * Delta_u
+        print(f'agent: {agent}, Iteration: {k}, Loss function: {J[k, agent]:4.3f}, Delta_u: {delta_u_store[k, agent]:4.3f}')
 
 
 _, ax = plt.subplots()
@@ -120,7 +135,8 @@ correct_predict = 0
 correct_predict_not_lucky = 0
 false_positive = 0
 false_negative = 0
-for image in range(n_images):
+dim_test = n_images - 100
+for image in range(dim_test):
     xx = forward_pass(uu, x_test_vct[image], T, dim_layer)
     predict = xx[-1, 0]
     if y_test[image] == 1:
@@ -135,11 +151,11 @@ for image in range(n_images):
         false_positive += 1
 
 print("The accuracy is {} % where:\n".format((
-                                                         correct_predict + correct_predict_not_lucky) / n_images * 100))  # sum of first and second category expressed in percentage
+                                                         correct_predict + correct_predict_not_lucky) / dim_test * 100))  # sum of first and second category expressed in percentage
 print("\tFalse positives {} \n".format(false_positive))  # third category ( false positive)
 print("\tFalse negatives {} \n".format(false_negative))  # fourth category ( false negative)
 print("\tNumber of times LuckyNumber has been identified correctly {} over {} \n".format(correct_predict,
-                                                                                         n_images))  # first category ( images associated to lable 1 predicted correctly )
+                                                                                         dim_test))  # first category ( images associated to lable 1 predicted correctly )
 print("\tNumber of times not LuckyNumber has been identified correctly {} over {} \n".format(correct_predict_not_lucky,
-                                                                                             n_images))  # first category ( images associated to lable 1 predicted correctly )
+                                                                                             dim_test))  # first category ( images associated to lable 1 predicted correctly )
 print("The effective LuckyNumbers in the tests are: {}".format(counter_corr_label))
