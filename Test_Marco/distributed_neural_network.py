@@ -12,14 +12,14 @@ np.random.seed(0) # generate random number (always the same seed)
 
 BALANCING = True
 FIGURE =False
-PRINT = True
+PRINT = False
 SAVE = True
 # chosen digit to wor
 LuckyNumber = 6
 
 epochs = 50
-stepsize = 0.005
-# stepsize = 1/(k+1)
+stepsize = 0.007
+
 
 # Graph parameters
 NN = 4
@@ -44,6 +44,7 @@ x_test = x_test / 255
 d = [784, 784, 784, 784]
 T = len(d)  # how much layer we have
 dim_layer = d[0]  # number of neurons considering bias
+print(f'Settings: NN={NN}, n_images={dim_train_agent}, epochs={epochs}, stepsize={stepsize}, layers={T} ')
 
 while True:
     Adj = np.random.binomial(1, p_ER, (NN, NN))  # create a NN x NN matrix with random connections
@@ -110,8 +111,8 @@ if BALANCING:
 
     x_train_vct, _, y_train, _ = train_test_split(x_train_vct, y_train, test_size=0.01)
     x_test_vct, _, y_test, _ = train_test_split(x_test_vct, y_test, test_size=0.01)
-
-    print('Resampled dataset shape %s' % Counter(y_train))
+    if PRINT:
+        print('Resampled dataset shape %s' % Counter(y_train))
 
 data_train = np.zeros((NN, dim_train_agent, np.shape(x_train_vct)[1]))
 label_train = np.zeros((NN, dim_train_agent))
