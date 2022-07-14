@@ -22,12 +22,12 @@ stepsize = 0.007
 
 
 # Graph parameters
-NN = 4
-p_ER = 0.4
+NN = 4  # Number of agents
+p_ER = 0.4  # Probability to spawn an edge
 I_NN = np.identity(NN, dtype=int)  # necessary to build the Adj
 
-dim_train_agent = 200
-dim_test_agent = int(0.3*dim_train_agent)
+dim_train_agent = 200  # Images for each agent
+dim_test_agent = int(0.3*dim_train_agent) # Test Images for each agent
 
 # Data acquisition and processing
 (x_train, y_train), (x_test, y_test) = mnist.load_data()
@@ -36,13 +36,13 @@ dim_test_agent = int(0.3*dim_train_agent)
 y_train = y_train.astype(np.int8)
 y_test = y_test.astype(np.int8)
 
-# scale the brightness of each pixel because otherwise saturates the activation function
+# Normalization of the images between [0, 1] otherwise they saturate the activation function
 x_train = x_train / 255
 x_test = x_test / 255
 
 #  Set Up the Neural Network
-d = [784, 784, 784, 784]
-T = len(d)  # how much layer we have
+d = [784, 784, 784, 784]  # Define the number of neurons for each layer (constant
+T = len(d)  # Layers of the neural network
 dim_layer = d[0]  # number of neurons considering bias
 print(f'Settings: NN={NN}, n_images={dim_train_agent}, epochs={epochs}, stepsize={stepsize}, layers={T} ')
 
@@ -65,7 +65,7 @@ while True:
 #  Compute mixing matrices
 #  Metropolis-Hastings method to obtain a doubly-stochastic matrix
 
-WW = np.zeros((NN, NN))
+WW = np.zeros((NN, NN))  # Initializing weighting matrix
 
 for ii in range(NN):
     N_ii = np.nonzero(Adj[ii])[0]  # In-Neighbors of node i
@@ -86,7 +86,7 @@ G = nx.from_numpy_array(Adj)
 if FIGURE:
     nx.draw(G, with_labels=True, font_weight='bold', node_color='orange', node_size=800)
 
-# we associate -1 (or 0) to data which not represent the number we want to classify
+# Associating -1 (or 0) to data which not represent the number we want to classify
 for i in range(0, np.shape(y_train)[0]):
     if y_train[i] == LuckyNumber:
         y_train[i] = 1
@@ -109,18 +109,21 @@ if BALANCING:
     x_train_vct, y_train = rus.fit_resample(x_train_vct, y_train)
     x_test_vct, y_test = rus.fit_resample(x_test_vct, y_test)
 
+    # Shuffling the train and the test set
     x_train_vct, _, y_train, _ = train_test_split(x_train_vct, y_train, test_size=0.01)
     x_test_vct, _, y_test, _ = train_test_split(x_test_vct, y_test, test_size=0.01)
     if PRINT:
         print('Resampled dataset shape %s' % Counter(y_train))
 
+# Initializing the store to split the train set between agents
 data_train = np.zeros((NN, dim_train_agent, np.shape(x_train_vct)[1]))
 label_train = np.zeros((NN, dim_train_agent))
 
+# Initializing the store to split the test set between agents
 data_test = np.zeros((NN, dim_test_agent, np.shape(x_test_vct)[1]))
 label_test = np.zeros((NN, dim_test_agent))
 
-# data_validation, label_validation
+# Splitting the train and the test set between agents
 for agent in range(NN):
     agent_index = agent * dim_train_agent + np.arange(dim_train_agent)
     data_train[agent, :, :] = x_train_vct[agent_index, :]
@@ -130,16 +133,17 @@ for agent in range(NN):
     data_test[agent, :, :] = x_test_vct[agent_index, :]
     label_test[agent, :] = y_test[agent_index]
 
-# Initialization
+# Initialization of the weights
 uu = np.zeros((epochs, NN, T-1, dim_layer, dim_layer+1))
-uu[0] = np.random.randn(NN, T-1, dim_layer, dim_layer+1)
-uu[:, :, -1, 1:] = 0
+uu[0] = np.random.randn(NN, T-1, dim_layer, dim_layer+1)  # First iteration has rando weights
+uu[:, :, -1, 1:] = 0  # Resetting the weights of the last layer except the first neuron to zero
 
 zz = np.zeros_like(uu)
 delta_u = np.zeros_like(uu)
 
 J = np.zeros((epochs, NN))
 
+# Useful prints
 print(f'k\t', end='')
 for agent in range(NN):
     if agent == NN-1:
@@ -147,11 +151,13 @@ for agent in range(NN):
     else:
         print(f'J[{agent}]\t d_u[{agent}]\t', end='\t')
 
+# START THE ALGORITHM
 for k in range(epochs-1):
     for agent in range(NN):
+        # Neural network evaluation
         for image in range(dim_train_agent):
-            temp_data = data_train[agent, image]
-            temp_label = label_train[agent, image]
+            temp_data = data_train[agent, image]  # Pick the image fo the forward pass
+            temp_label = label_train[agent, image]  # Pick the right label to evaluate the cost function
 
             xx = forward_pass(uu[k, agent], temp_data, T, dim_layer)
 
@@ -160,6 +166,7 @@ for k in range(epochs-1):
             temp_delta_u = backward_pass(xx, uu[k, agent], lambdaT, T, dim_layer)
             delta_u[k, agent] += temp_delta_u
 
+    # Gradient Tracking Algorithm
     print(f'{k}\t', end='')
     for agent in range(NN):
         uu[k+1, agent] = WW[agent, agent]*uu[k, agent]
@@ -191,10 +198,6 @@ ax.plot(range(epochs), J)
 ax.title.set_text('J')
 plt.show()
 
-# _, ax = plt.subplots()
-# ax.plot(range(epochs), np.linalg.norm(delta_u))
-# ax.title.set_text('delta_u')
-# plt.show()
 
 val_function(uu, data_test, label_test, dim_test_agent, NN, dim_layer, T)
 
