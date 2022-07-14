@@ -122,8 +122,8 @@ def MSE(predicted: int, label: int):
     return J, grad_J
 
 def BCE(predicted: int, label: int):
-    J = - (label * np.log(predicted + 1e-10) + (1 - label) * np.log(1 - predicted + 1e-10))
-    grad_J = - (label / (predicted + 1e-10) - (1 - label) / (1 - predicted + 1e-10))
+    J = - label * np.log(predicted + 1e-10) - (1 - label) * np.log(1 - predicted + 1e-10)
+    grad_J = - label / (predicted + 1e-10) + (1 - label) / (1 - predicted + 1e-10)
     return J, grad_J
 
 def val_function(uu, data_test, label_test, dim_test_agent, NN, dim_layer, T):
@@ -153,9 +153,9 @@ def val_function(uu, data_test, label_test, dim_test_agent, NN, dim_layer, T):
         print("\tFalse positives {} \n".format(false_positive))  # third category ( false positive)
         print("\tFalse negatives {} \n".format(false_negative))  # fourth category ( false negative)
         print("\tNumber of times LuckyNumber has been identified correctly {} over {} \n".format(correct_predict,
-                                                                                                 dim_test_agent))  # first category ( images associated to lable 1 predicted correctly )
+                                                                                                 counter_corr_label))  # first category ( images associated to lable 1 predicted correctly )
         print("\tNumber of times not LuckyNumber has been identified correctly {} over {} \n".format(correct_predict_not_lucky,
-                                                                                                     dim_test_agent))  # first category ( images associated to lable 1 predicted correctly )
+                                                                                                     dim_test_agent - counter_corr_label))  # first category ( images associated to lable 1 predicted correctly )
         print("The effective LuckyNumbers in the tests are: {}".format(counter_corr_label))
 
     return None

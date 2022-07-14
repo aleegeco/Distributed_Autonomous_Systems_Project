@@ -11,14 +11,14 @@ np.random.seed(0) # generate random number (always the same seed)
 
 
 BALANCING = True
-FIGURE =False
+FIGURE = False
 PRINT = False
 SAVE = True
 # chosen digit to wor
 LuckyNumber = 6
 
-epochs = 50
-stepsize = 0.007
+epochs = 60
+stepsize = 0.01
 
 
 # Graph parameters
@@ -70,23 +70,21 @@ WW = np.zeros((NN, NN))  # Initializing weighting matrix
 for ii in range(NN):
     N_ii = np.nonzero(Adj[ii])[0]  # In-Neighbors of node i
     deg_ii = len(N_ii)
-
     for jj in N_ii:
         N_jj = np.nonzero(Adj[jj])[0]  # In-Neighbors of node j
         deg_jj = N_jj.shape[0]
         WW[ii, jj] = 1 / (1 + max([deg_ii, deg_jj]))
-
 WW += I_NN - np.diag(np.sum(WW, axis=0))
 
 if PRINT:
     print('Check Stochasticity \n row: {} \n column: {}'.format(np.sum(WW, axis=1), np.sum(WW, axis=0)))
 
-# Creating the Graph g
+# Creating the Graph G
 G = nx.from_numpy_array(Adj)
 if FIGURE:
     nx.draw(G, with_labels=True, font_weight='bold', node_color='orange', node_size=800)
 
-# Associating -1 (or 0) to data which not represent the number we want to classify
+# Associate 0 to data which not represent the number we want to classify
 for i in range(0, np.shape(y_train)[0]):
     if y_train[i] == LuckyNumber:
         y_train[i] = 1
@@ -135,11 +133,11 @@ for agent in range(NN):
 
 # Initialization of the weights
 uu = np.zeros((epochs, NN, T-1, dim_layer, dim_layer+1))
-uu[0] = np.random.randn(NN, T-1, dim_layer, dim_layer+1)  # First iteration has rando weights
+uu[0] = np.random.randn(NN, T-1, dim_layer, dim_layer+1)  # First iteration has random weights
 uu[:, :, -1, 1:] = 0  # Resetting the weights of the last layer except the first neuron to zero
 
-zz = np.zeros_like(uu)
-delta_u = np.zeros_like(uu)
+zz = np.zeros_like(uu)  # initialization of z for distributed tracking with same dimension of u
+delta_u = np.zeros_like(uu) # initialization of delta_u with same dimension of u
 
 J = np.zeros((epochs, NN))
 
@@ -147,14 +145,15 @@ J = np.zeros((epochs, NN))
 print(f'k\t', end='')
 for agent in range(NN):
     if agent == NN-1:
-        print(f'J[{agent}]\t d_u[{agent}]\t')
+        print(f'J[{agent}]\t \t d_u[{agent}]\t \t')
     else:
-        print(f'J[{agent}]\t d_u[{agent}]\t', end='\t')
+        print(f'J[{agent}]\t \t d_u[{agent}]\t \t', end='\t \t')
 
 # START THE ALGORITHM
 for k in range(epochs-1):
     for agent in range(NN):
-        # Neural network evaluation
+        # Neural Network evaluation
+        # stepsize = 1/2*(k+1)
         for image in range(dim_train_agent):
             temp_data = data_train[agent, image]  # Pick the image fo the forward pass
             temp_label = label_train[agent, image]  # Pick the right label to evaluate the cost function
@@ -174,15 +173,15 @@ for k in range(epochs-1):
             uu[k+1, agent] += WW[agent, neigh]*uu[k, neigh]
         uu[k+1, agent] += zz[k, agent] - stepsize*delta_u[k, agent]
 
-        zz[k+1, agent] = WW[agent, agent]*zz[k, agent] - stepsize*(WW[agent, agent]*delta_u[k, agent] - delta_u[k, agent])
+        zz[k+1, agent] = WW[agent, agent]*zz[k, agent] - stepsize*WW[agent, agent]*delta_u[k, agent]
         for neigh in G.neighbors(agent):
             zz[k+1, agent] += WW[agent, neigh]*zz[k, neigh] - stepsize*WW[agent, neigh]*delta_u[k, neigh]
-        zz[k+1, agent] -= stepsize*delta_u[k, agent]  # not sure that this is needed
+        zz[k+1, agent] += stepsize*delta_u[k, agent]  # not sure that this is needed
 
         if agent == NN - 1:
-            print(f'{J[k, agent]:4.2f}\t {np.linalg.norm(delta_u[k, agent]):4.2f}\t')
+            print(f'{J[k, agent]:4.2f}\t \t{np.linalg.norm(delta_u[k, agent]):4.2f}\t \t')
         else:
-            print(f'{J[k, agent]:4.2f}\t {np.linalg.norm(delta_u[k, agent]):4.2f}\t', end='\t')
+            print(f'{J[k, agent]:4.2f}\t \t{np.linalg.norm(delta_u[k, agent]):4.2f}\t \t', end='\t \t')
 
 if SAVE:
     np.save('store_data/epochs.npy', epochs, allow_pickle=True)
@@ -198,6 +197,9 @@ ax.plot(range(epochs), J)
 ax.title.set_text('J')
 plt.show()
 
+plt.figure()
+nx.draw(G)
+plt.show()
 
 val_function(uu, data_test, label_test, dim_test_agent, NN, dim_layer, T)
 
