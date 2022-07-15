@@ -8,7 +8,7 @@ from ament_index_python.packages import get_package_share_directory
 
 
 def generate_launch_description():
-    MAXITERS = 4000
+    MAXITERS = 1500
     COMM_TIME = 10e-2 # communication time period
     dd = 2 # dimension of position vector and velocity vector
     n_x = 2*dd # dimension of the single vector x_i
@@ -52,6 +52,14 @@ def generate_launch_description():
 
     # tensor which stores all the projection matrix for each pair of nodes (i,j)
     Pg_stack = proj_stack(Node_pos, NN, dd)
+    # Compute the Bearing Laplacian to check if the positions and velocities of the followers are singular or not
+    B = bearing_laplacian(Pg_stack, Adj, dd)
+    Bff = B[dd * n_leaders:dd * NN, dd * n_leaders:dd * NN]
+
+    if np.linalg.det(Bff) != 0:
+        print("The matrix Bff is not singular! p*_f and v*_f exist and are unique \n")
+    else:
+        print("The matrix Bff is singular! Check the Graph \n")
 
     launch_description = [] # Append here your nodes
     # Impose leaders initial conditions - they must start still

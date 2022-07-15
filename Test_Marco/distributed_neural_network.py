@@ -17,7 +17,7 @@ SAVE = True
 # chosen digit to wor
 LuckyNumber = 6
 
-epochs = 150
+epochs = 250
 stepsize = 0.01
 
 
@@ -26,7 +26,7 @@ NN = 4  # Number of agents
 p_ER = 0.4  # Probability to spawn an edge
 I_NN = np.identity(NN, dtype=int)  # necessary to build the Adj
 
-dim_train_agent = 200  # Images for each agent
+dim_train_agent = 50  # Images for each agent
 dim_test_agent = int(0.5*dim_train_agent) # Test Images for each agent
 
 # Data acquisition and processing
