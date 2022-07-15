@@ -12,6 +12,7 @@ NN = len(files)
 
 PLOT = True
 ANIMATION = True
+MOVING = False
 LETTERS = False
 xx_csv = {}
 xx_ref_pos_csv = {}
@@ -127,7 +128,8 @@ if ANIMATION: # ANIMATION
             xx_ii = xx_tt[index_ii]
             xx_ref_pos_ii = xx_ref_tt[index_ii]
             plt.plot(xx_ii[0],xx_ii[1], marker='o', markersize=15, fillstyle='none', color = 'tab:red')
-            plt.plot(xx_ref_pos_ii[0], xx_ref_pos_ii[1], marker='x', markersize=15, color='tab:blue')
+            if not MOVING:
+                plt.plot(xx_ref_pos_ii[0], xx_ref_pos_ii[1], marker='x', markersize=15, color='tab:blue')
 
 
         axes_lim = (np.min(xx_pos)-1,np.max(xx_pos)+1)

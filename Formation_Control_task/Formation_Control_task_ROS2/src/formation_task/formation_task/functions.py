@@ -106,21 +106,17 @@ def kron_dynamical_matrix(B: np.array, NN: int, n_leaders: int, k_p: int, k_v: i
     return A_kron
 
 #### ROS 2 FUNCTIONS ####
-
 def update_dynamics(dt: int, self):
     ### Function which update the dynamics of each agent in ROS2, it is computed agent-wise not in compact matrix form
     ## INPUT it takes "self" so we can use every class variable defined in agent_i.py without explicitly declare it
     n_x = np.shape(self.x_i)[0] # dimension of the state vector
     dd = n_x//2 # dimension of position and velocity vector (i.e. we're in the plane XY or in the space XYZ)
-
     x_i = self.x_i # state of the agent i at this time step
     x_dot_i = np.zeros(n_x)
-
     # divide the dynamics in position and velocity vector
     pos_i = x_i[:dd]
     vel_i = x_i[dd:]
     vel_dot_i = np.zeros(dd)
-
     K_i = np.zeros((dd, dd))  # gain matrix for moving leaders control
     w_i = np.ones(dd) * 0.3 # constant input disturbance
 
@@ -168,7 +164,6 @@ def update_dynamics(dt: int, self):
                 else:
                     pos_dot_i = vel_i
                     vel_dot_i += - Pg_ij@(self.k_p*(pos_i - pos_j) + self.k_v*(vel_i - vel_j))
-
             x_dot_i = np.concatenate((pos_dot_i, vel_dot_i))
         x_i += dt * x_dot_i # forward euler to discretize the dynamics
     return x_i
