@@ -8,21 +8,19 @@ from imblearn.under_sampling import RandomUnderSampler
 from collections import Counter
 from Function_Task_1 import MSE as cost_function
 
-np.random.seed(0) # generate random number (always the same seed)
-
+np.random.seed(0)  # generate random number (always the same seed)
 
 BALANCING = True
-FIGURE =False
+FIGURE = False
 
 # chosen digit to wor
 LuckyNumber = 6
 
 epochs = 50
 stepsize = 0.01
-# stepsize = 1/(k+1)
-NN = 2
-dim_train_agent = 200
-dim_test_agent = int(0.2*dim_train_agent)
+
+train_images = 200
+test_images = int(0.3 * train_images)
 
 # Data acquisition and processing
 (x_train, y_train), (x_test, y_test) = mnist.load_data()
@@ -39,7 +37,6 @@ x_test = x_test / 255
 d = [784, 784, 784, 784]
 T = len(d)  # how much layer we have
 dim_layer = d[0]  # number of neurons considering bias
-
 
 # we associate -1 (or 0) to data which not represent the number we want to classify
 for i in range(0, np.shape(y_train)[0]):
@@ -69,69 +66,70 @@ if BALANCING:
 
     print('Resampled dataset shape %s' % Counter(y_train))
 
-    if FIGURE:
-        plt.figure()
-        for i in range(100):
-            plt.subplot(10, 10, i + 1)
-            plt.xticks([])
-            plt.yticks([])
-            plt.grid(False)
-            plt.imshow(np.reshape(x_train_vct[i], (28, 28)))
-            plt.xlabel(y_train[i])
-        plt.show()
-
-data_train = np.zeros((NN, dim_train_agent, np.shape(x_train_vct)[1]))
-label_train = np.zeros((NN, dim_train_agent))
-
-data_test = np.zeros((NN, dim_test_agent, np.shape(x_test_vct)[1]))
-label_test = np.zeros((NN, dim_test_agent))
-
-# data_validation, label_validation
-for agent in range(NN):
-    agent_index = agent * dim_train_agent + np.arange(dim_train_agent)
-    data_train[agent, :, :] = x_train_vct[agent_index, :]
-    label_train[agent, :] = y_train[agent_index]
-
-    agent_index = agent * dim_test_agent + np.arange(dim_test_agent)
-    data_test[agent, :, :] = x_test_vct[agent_index, :]
-    label_test[agent, :] = y_test[agent_index]
-
-uu = np.random.randn(epochs, NN, T-1, dim_layer, dim_layer+1)
-uu[:, :, -1, 1:] = 0
-delta_u_store = np.zeros((epochs, NN))
+uu = np.random.randn(epochs, T - 1, dim_layer, dim_layer + 1)
+uu[:, -1, 1:] = 0
+delta_u_store = np.zeros(epochs)
 Delta_u = 0
-J = np.zeros((epochs, NN))
+J = np.zeros(epochs)
 
-for k in range(epochs-1):
-    for agent in range(NN):
-        Delta_u = 0
-        for image in range(dim_train_agent):
-            temp_data = data_train[agent, image]
-            temp_label = label_train[agent, image]
+for k in range(epochs - 1):
 
-            xx = forward_pass(uu[k, agent], temp_data, T, dim_layer)
+    Delta_u = 0
+    for image in range(train_images):
+        temp_data = x_train_vct[image]
+        temp_label = y_train[image]
 
-            J_temp, lambdaT = cost_function(xx[-1, 0], temp_label)
-            J[k, agent] += J_temp
-            Delta_u += backward_pass(xx, uu[k, agent], lambdaT, T, dim_layer)
+        xx = forward_pass(uu[k], temp_data, T, dim_layer)
 
-        delta_u_store[k, agent] = np.linalg.norm(Delta_u)
-        uu[k+1, agent] = uu[k, agent] - stepsize * Delta_u
-        print(f'agent: {agent}, Iteration: {k}, Loss function: {J[k, agent]:4.3f}, Delta_u: {delta_u_store[k, agent]:4.3f}')
+        J_temp, lambdaT = cost_function(xx[-1, 0], temp_label)
+        J[k] += J_temp
+        Delta_u += backward_pass(xx, uu[k], lambdaT, T, dim_layer)
 
+    delta_u_store[k] = np.linalg.norm(Delta_u)
+    uu[k + 1] = uu[k] - stepsize * Delta_u
+    print(f'Iteration: {k}, Loss function: {J[k]:4.3f}, Delta_u: {delta_u_store[k]:4.3f}')
 
-_, ax = plt.subplots()
-ax.plot(range(epochs), J)
-ax.title.set_text('$J$')
-# ax.xlabel("iterations")
-# ax.ylabel("$J(.)$")
+plt.semilogy(range(epochs), J)
+plt.title('$J$')
+plt.xlabel("iterations")
+plt.ylabel("$J(.)$")
 plt.show()
 
-_, ax = plt.subplots()
-ax.plot(range(epochs), delta_u_store)
-ax.title.set_text('$\Delta u$')
-# ax.xlabel("iterations")
-# ax.ylabel("$\Delta u$")
+plt.plot(range(epochs), delta_u_store)
+plt.title('$\Delta u$')
+plt.xlabel("iterations")
+plt.ylabel("$\Delta u$")
 plt.show()
 
-val_function(uu, data_test, label_test, dim_test_agent, NN, dim_layer, T)
+data_test = x_test_vct[:test_images]
+label_test = y_test[:test_images]
+
+counter_corr_label = 0
+correct_predict = 0
+correct_predict_not_lucky = 0
+false_positive = 0
+false_negative = 0
+for image in range(test_images):
+    xx = forward_pass(uu[-1], x_test_vct[image], T, dim_layer)
+    predict = xx[-1, 0]
+    if y_test[image] == 1:
+        counter_corr_label += 1
+    if (predict >= 0.5) and (y_test[image] == 1):
+        correct_predict += 1
+    elif (predict < 0.5) and (y_test[image] == 0):
+        correct_predict_not_lucky += 1
+    elif (predict < 0.5) and (y_test[image] == 1):
+        false_negative += 1
+    elif (predict >= 0.5) and (y_test[image] == 0):
+        false_positive += 1
+
+print("The accuracy is {} % where:\n".format((
+                                                     correct_predict + correct_predict_not_lucky) / test_images * 100))  # sum of first and second category expressed in percentage
+print("\tFalse positives {} \n".format(false_positive))  # third category ( false positive)
+print("\tFalse negatives {} \n".format(false_negative))  # fourth category ( false negative)
+print("\tNumber of times LuckyNumber has been identified correctly {} over {} \n".format(correct_predict,
+                                                                                         counter_corr_label))  # first category ( images associated to lable 1 predicted correctly )
+print("\tNumber of times not LuckyNumber has been identified correctly {} over {} \n".format(
+    correct_predict_not_lucky,
+    test_images - counter_corr_label))  # first category ( images associated to lable 1 predicted correctly )
+print("The effective LuckyNumbers in the tests are: {}".format(counter_corr_label))
