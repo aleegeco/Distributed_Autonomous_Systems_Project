@@ -56,7 +56,12 @@ def generate_launch_description():
 
         Pg_stack_word[letter, :, :, :, :] = proj_stack(Node_pos[letter, :, :, :], NN, dd)
 
-
+        B = bearing_laplacian(Pg_stack_word[letter], Adj, dd)
+        Bff = B[dd * n_leaders:dd * NN, dd * n_leaders:dd * NN]
+        if np.linalg.det(Bff) != 0:
+            print("Bff is not singular! The formation for letter {} has unique p* and v* \n".format(let))
+        else:
+            print("Bff is singular! Check the graph \n")
     launch_description = [] # Append here your nodes
 
     # define initial conditions
