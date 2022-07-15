@@ -20,7 +20,7 @@ epochs = 50
 stepsize = 0.01
 
 train_images = 200
-test_images = int(0.3 * train_images)
+test_images = 200
 
 # Data acquisition and processing
 (x_train, y_train), (x_test, y_test) = mnist.load_data()
@@ -89,7 +89,7 @@ for k in range(epochs - 1):
     uu[k + 1] = uu[k] - stepsize * Delta_u
     print(f'Iteration: {k}, Loss function: {J[k]:4.3f}, Delta_u: {delta_u_store[k]:4.3f}')
 
-plt.semilogy(range(epochs), J)
+plt.semilogy(range(epochs-1), J[:-1])
 plt.title('$J$')
 plt.xlabel("iterations")
 plt.ylabel("$J(.)$")
@@ -122,6 +122,7 @@ for image in range(test_images):
         false_negative += 1
     elif (predict >= 0.5) and (y_test[image] == 0):
         false_positive += 1
+
 
 print("The accuracy is {} % where:\n".format((
                                                      correct_predict + correct_predict_not_lucky) / test_images * 100))  # sum of first and second category expressed in percentage
