@@ -74,7 +74,7 @@ x_train = x_train/255# used for scaling of the numbers rappresenting the color o
 
 
 plt.figure(figsize=(10,10))# <--------------------------------------------------------------------------- UNKNOWN
-for i in range(25):# i want to plot 25 images
+for i in range(25):# i want to PLOT 25 images
     plt.subplot(5,5,i+1)# the letter "i" rappresent the position
     plt.xticks([])# <------------------------------------------------------------------------------------ UNKNOWN
     plt.yticks([])

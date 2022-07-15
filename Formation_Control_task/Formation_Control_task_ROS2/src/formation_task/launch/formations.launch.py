@@ -18,7 +18,7 @@ def generate_launch_description():
     k_i = 0.3 # integral gain
 
 
-    acceleration_leader = False # variable which sets the leaders acceleration
+    acceleration_leader = True # variable which sets the leaders acceleration
     integral_action = True # variable which sets the integral action
     random_init = True # variable which sets randomly the intial conditions
 
