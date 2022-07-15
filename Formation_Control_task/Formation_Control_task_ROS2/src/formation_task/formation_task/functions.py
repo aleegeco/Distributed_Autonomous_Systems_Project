@@ -192,27 +192,8 @@ def piecewise_acc(self):
     n_x = np.shape(self.x_i)[0]
     dd = n_x//2
     time = np.linspace(0, self.max_iters, self.max_iters + 2)
-    tg = quintic(0, 1*10e3, time)
+    tg = quintic(0, 1*10e2, time)
     acc = 100*tg.qdd
     acc_t = acc[self.tt]
     acc_t = np.ones(dd)*acc_t
     return acc_t
-
-# def saturation(self, node_j):
-#     n_x = np.shape(self.x_i)[0] # dimension of the state vector
-#     dd = n_x//2 # dimension of position and velocity vector
-#     err_x = self.k_i*self.error_pos[self.agent_id, node_j, 0]
-#     err_y = self.k_i*self.error_pos[self.agent_id, node_j, 1]
-#
-#     # if err_x > self.max_error:
-#     #     err_x = self.max_error
-#     # if err_x < - self.max_error:
-#     #     err_x = - self.max_error
-#     #
-#     # if err_y > self.max_error:
-#     #     err_y = self.max_error
-#     # if err_y < - self.max_error:
-#     #     err_y = - self.max_error
-#
-#     error = np.array([err_x, err_y]).reshape((dd))
-#     return error
