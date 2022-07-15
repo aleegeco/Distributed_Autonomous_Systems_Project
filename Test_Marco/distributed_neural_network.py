@@ -193,7 +193,7 @@ if SAVE:
 
 
 _, ax = plt.subplots()
-ax.plot(range(epochs), J)
+ax.PLOT(range(epochs), J)
 ax.title.set_text('J')
 plt.show()
 

@@ -70,7 +70,7 @@ for i in range(nn):
         random_node = int(np.random.rand()*(d[1]))
         random_weight = int(np.random.rand()*(d[1]))
         for agent in range(NN):
-            axs[i, j].plot(range(epochs-1), uu[:-1, agent, 1, random_node, random_weight])
+            axs[i, j].PLOT(range(epochs - 1), uu[:-1, agent, 1, random_node, random_weight])
             axs[i, j].margins(0)
             axs[i, j].grid(True)
             axs[i, j].set_title(f'Neuron:{random_node}, Weight:{random_weight}, layer:{1}')
