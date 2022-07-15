@@ -130,7 +130,6 @@ def update_dynamics(dt: int, self):
             vel_dot_i = piecewise_acc(self)
             x_dot_i = np.concatenate((pos_dot_i, vel_dot_i))
             x_i = x_i + dt*x_dot_i
-
             for node_j in self.neigh:  # for cycle to empty the buffer even if we're considering leaders, otherwise the algorithm will not continue
                 _ = np.array(self.received_data[node_j].pop(0)[1:])
         else: # otherwise, the leader remains still
@@ -138,39 +137,38 @@ def update_dynamics(dt: int, self):
             for node_j in self.neigh:  # for cycle to empty the buffer even if we're considering leaders,
                                         # otherwise the algorithm will not continue
                 _ = np.array(self.received_data[node_j].pop(0)[1:])
-
     else: # if we are not leaders we'll enter this else
         for node_j in self.neigh:
             K_i += self.Pg_stack_ii[node_j, :]
-
         for node_j in self.neigh:
             x_j = np.array(self.received_data[node_j].pop(0)[1:]) # I take the received state from the message
             pos_j = x_j[:dd]
             vel_j = x_j[dd:]
-
             index_i = node_j*dd + np.arange(dd)
             self.store_acc[index_i, self.tt] = vel_j  # store the acceleration to compute the derivative
             self.error_pos[self.agent_id, node_j, :] += (pos_i - pos_j)*dt  # increase the sum for the integral term
             Pg_ij = self.Pg_stack_ii[node_j, :]  # set the Pg_ij* as a variable to make the code clearer
 
             if self.leader_acceleration:  # if leaders are moving we impose this dynamics
-                vel_dot_j = calc_derivative(self, node_j, dt)  # numerical derivative for neighbors acceleration
-                pos_dot_i = vel_i
+                vel_dot_j = calc_derivative(self, node_j, dt) # numerical derivative for neighbors acceleration
                 if self.integral_action:  # if we want to apply the integral term
                     int_term = self.k_i*self.error_pos[self.agent_id, node_j, :]
+                    pos_dot_i = vel_i
                     vel_dot_i += - np.linalg.inv(K_i)@(Pg_ij@(self.k_p*(pos_i - pos_j) \
-                                                              + self.k_v*(vel_i - vel_j)+ int_term - vel_dot_j)) + w_i
+                                            + self.k_v*(vel_i - vel_j)+ int_term - vel_dot_j)) + w_i
                 else:
                     pos_dot_i = vel_i
                     vel_dot_i += - np.linalg.inv(K_i)@(Pg_ij @ (self.k_p * (pos_i - pos_j) \
-                                                                      + self.k_v * (vel_i - vel_j) - vel_dot_j))
+                                                                  + self.k_v * (vel_i - vel_j) - vel_dot_j))
             else:
-                pos_dot_i = vel_i
                 if self.integral_action: # if we want to apply the integral term
                     int_term = self.k_i*self.error_pos[self.agent_id, node_j, :]
+                    pos_dot_i = vel_i
                     vel_dot_i += - (Pg_ij@(self.k_p*(pos_i - pos_j) + self.k_v*(vel_i - vel_j)+ int_term)) + w_i
                 else:
+                    pos_dot_i = vel_i
                     vel_dot_i += - Pg_ij@(self.k_p*(pos_i - pos_j) + self.k_v*(vel_i - vel_j))
+
             x_dot_i = np.concatenate((pos_dot_i, vel_dot_i))
         x_i += dt * x_dot_i # forward euler to discretize the dynamics
     return x_i
@@ -199,3 +197,22 @@ def piecewise_acc(self):
     acc_t = acc[self.tt]
     acc_t = np.ones(dd)*acc_t
     return acc_t
+
+# def saturation(self, node_j):
+#     n_x = np.shape(self.x_i)[0] # dimension of the state vector
+#     dd = n_x//2 # dimension of position and velocity vector
+#     err_x = self.k_i*self.error_pos[self.agent_id, node_j, 0]
+#     err_y = self.k_i*self.error_pos[self.agent_id, node_j, 1]
+#
+#     # if err_x > self.max_error:
+#     #     err_x = self.max_error
+#     # if err_x < - self.max_error:
+#     #     err_x = - self.max_error
+#     #
+#     # if err_y > self.max_error:
+#     #     err_y = self.max_error
+#     # if err_y < - self.max_error:
+#     #     err_y = - self.max_error
+#
+#     error = np.array([err_x, err_y]).reshape((dd))
+#     return error
