@@ -8,7 +8,7 @@ from ament_index_python.packages import get_package_share_directory
 
 
 def generate_launch_description():
-    MAXITERS = 4000
+    MAXITERS = 1500
     COMM_TIME = 10e-2 # communication time period
     dd = 2 # dimension of position vector and velocity vector
     n_x = 2*dd # dimension of the single vector x_i
