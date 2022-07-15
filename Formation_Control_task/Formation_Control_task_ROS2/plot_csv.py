@@ -10,9 +10,9 @@ signal.signal(signal.SIGINT, signal.SIG_DFL)
 _, _, files = next(os.walk("./_csv_file"))
 NN = len(files)
 
-plot = True
-animation = True
-letters = False
+PLOT = True
+ANIMATION = True
+LETTERS = False
 xx_csv = {}
 xx_ref_pos_csv = {}
 Tlist = []
@@ -38,14 +38,14 @@ xx_pos = np.zeros((NN*dd, T_max))
 xx_vel = np.zeros((NN*dd, T_max))
 xx_ref_pos = np.zeros((NN*dd, T_max))
 
-# Store differently positions and velocities to plot them separetely
+# Store differently positions and velocities to PLOT them separetely
 for ii in range(NN):
     index_ii = ii*dd + np.arange(dd)
     xx_pos[index_ii, :] = xx_csv[ii][:dd][:T_max] # useful to remove last samples
     xx_vel[index_ii, :] = xx_csv[ii][dd:][:T_max]
     xx_ref_pos[index_ii, :] = xx_ref_pos_csv[ii][:T_max]
 
-if plot:
+if PLOT:
 # Plot of evolution of position x over time for each node
     legend = []
     plt.figure()
@@ -54,8 +54,10 @@ if plot:
         plt.plot(range(T_max), xx_pos[node*2, :])
         legend.append("i: {}".format(node))
     plt.legend(legend); plt.grid()
+    plt.xlabel("iterations")
+    plt.ylabel("$p_{i,x}$")
 
-    # plot of evolution of position y over time for each node
+    # PLOT of evolution of position y over time for each node
     legend = []
     plt.figure()
     plt.title("Evolution of $p_{i,y}$")
@@ -63,8 +65,10 @@ if plot:
         plt.plot(range(T_max), xx_pos[node*2 + 1, :])
         legend.append("i: {}".format(node))
     plt.legend(legend); plt.grid()
+    plt.xlabel("iterations")
+    plt.ylabel("$p_{i,y}$")
 
-    # plot of evolution of velocity x over time for each node
+# PLOT of evolution of velocity x over time for each node
     legend = []
     plt.figure()
     plt.title("Evolution of $v_{i,x}$")
@@ -72,8 +76,10 @@ if plot:
         plt.plot(range(T_max), xx_vel[node*2, :])
         legend.append("i: {}".format(node))
     plt.legend(legend); plt.grid()
+    plt.xlabel("iterations")
+    plt.ylabel("$v_{i,x}$")
 
-    # plot of evolution of velocity y over time for each node
+    # PLOT of evolution of velocity y over time for each node
     legend = []
     plt.figure()
     plt.title("Evolution of $v_{i,y}$")
@@ -81,9 +87,11 @@ if plot:
         plt.plot(range(T_max), xx_vel[node*2 + 1, :])
         legend.append("i: {}".format(node))
     plt.legend(legend); plt.grid()
+    plt.xlabel("iterations")
+    plt.ylabel("$v_{i,y}$")
 
 
-    # plot error evolution in distance between agents and their reference positions
+    # PLOT error evolution in distance between agents and their reference positions
     legend = []
     plt.figure()
     plt.title("Error evolution $|e_{i,p_{x}}|$")
@@ -91,8 +99,9 @@ if plot:
         plt.plot(range(T_max), np.abs(xx_pos[node * 2, :] - xx_ref_pos[node * 2]))
         legend.append("i: {}".format(node))
     plt.legend(legend); plt.grid()
-
-    # plot error evolution in distance between agents and their reference positions
+    plt.xlabel("iterations")
+    plt.ylabel("$|e_{i,p_{x}}|$")
+    # PLOT error evolution in distance between agents and their reference positions
     legend = []
     plt.figure()
     plt.title("Error evolution $|e_{i,p_{y}}|$")
@@ -100,15 +109,16 @@ if plot:
         plt.plot(range(T_max), np.abs(xx_pos[node * 2 + 1, :] - xx_ref_pos[node * 2 + 1]))
         legend.append("i: {}".format(node))
     plt.legend(legend); plt.grid()
-
+    plt.xlabel("iterations")
+    plt.ylabel("$|e_{i,p_{y}}|$")
 # block_var = False if n_x < 3 else True
 # plt.show(block=block_var)
 
 
-# animation of the position of all the agents
-if animation: # animation
+# ANIMATION of the position of all the agents
+if ANIMATION: # ANIMATION
     plt.figure()
-    dt = 10 # sub-sampling of the plot horizon
+    dt = 10 # sub-sampling of the PLOT horizon
     for tt in range(0,T_max,dt):
         for ii in range(NN):
             xx_tt = xx_pos[:, tt].T
@@ -122,7 +132,7 @@ if animation: # animation
 
         axes_lim = (np.min(xx_pos)-1,np.max(xx_pos)+1)
         plt.xlim(axes_lim); plt.ylim(axes_lim)
-        if not letters:
+        if not LETTERS:
             plt.plot(xx_pos[0:dd*NN:dd,:].T,xx_pos[1:dd*NN:dd,:].T, linestyle="dashed")
         plt.grid()
         plt.title("Animation of the simulated formation")
