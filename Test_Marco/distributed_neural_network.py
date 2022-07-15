@@ -11,13 +11,13 @@ np.random.seed(0) # generate random number (always the same seed)
 
 
 BALANCING = True
-FIGURE = False
+FIGURE = True
 PRINT = False
 SAVE = True
 # chosen digit to wor
 LuckyNumber = 6
 
-epochs = 60
+epochs = 150
 stepsize = 0.01
 
 
@@ -27,7 +27,7 @@ p_ER = 0.4  # Probability to spawn an edge
 I_NN = np.identity(NN, dtype=int)  # necessary to build the Adj
 
 dim_train_agent = 200  # Images for each agent
-dim_test_agent = int(0.3*dim_train_agent) # Test Images for each agent
+dim_test_agent = int(0.5*dim_train_agent) # Test Images for each agent
 
 # Data acquisition and processing
 (x_train, y_train), (x_test, y_test) = mnist.load_data()
@@ -61,7 +61,6 @@ while True:
         if PRINT:
             print("Warning, the graph is NOT connected.")
         quit()
-
 #  Compute mixing matrices
 #  Metropolis-Hastings method to obtain a doubly-stochastic matrix
 
@@ -83,6 +82,7 @@ if PRINT:
 G = nx.from_numpy_array(Adj)
 if FIGURE:
     nx.draw(G, with_labels=True, font_weight='bold', node_color='orange', node_size=800)
+    plt.show()
 
 # Associate 0 to data which not represent the number we want to classify
 for i in range(0, np.shape(y_train)[0]):
@@ -197,9 +197,6 @@ ax.plot(range(epochs), J)
 ax.title.set_text('J')
 plt.show()
 
-plt.figure()
-nx.draw(G)
-plt.show()
 
 val_function(uu, data_test, label_test, dim_test_agent, NN, dim_layer, T)
 
