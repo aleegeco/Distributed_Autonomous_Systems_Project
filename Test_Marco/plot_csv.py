@@ -15,7 +15,6 @@ print('delta_u downloaded')
 uu = np.load('store_data/uu.npy')
 print('uu downloaded')
 
-
 plt.figure()
 legend = []
 for agent in range(NN):
@@ -61,7 +60,6 @@ plt.grid()
 plt.xlabel("iteration")
 plt.ylabel("$\sum_i\ ||\Delta u_i||$")
 
-
 nn = 2
 legend = []
 fig, axs = plt.subplots(nn, nn)
@@ -70,11 +68,11 @@ for i in range(nn):
         random_node = int(np.random.rand()*(d[1]))
         random_weight = int(np.random.rand()*(d[1]))
         for agent in range(NN):
-            axs[i, j].PLOT(range(epochs - 1), uu[:-1, agent, 1, random_node, random_weight])
+            axs[i, j].plot(range(epochs - 1), uu[:-1, agent, 1, random_node, random_weight])
             axs[i, j].margins(0)
             axs[i, j].grid(True)
             axs[i, j].set_title(f'Neuron:{random_node}, Weight:{random_weight}, layer:{1}')
-plt.setp(axs[-1, :], xlabel='iteration')
+plt.setp(axs[-1, :], xlabel='iterations')
 plt.setp(axs[:, 0], ylabel='weight')
 fig.suptitle("Consensus over weights")
 plt.show()
