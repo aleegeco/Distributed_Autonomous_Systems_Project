@@ -2,7 +2,7 @@
 ![License](https://badgen.net/badge/license/GPL-3.0/red)
 
 
-# Distributed Autonomous Systems Course Project N°1
+# Distributed Autonomous Systems Course Project
 This GitHub page contains solutions to [Project N°1](https://github.com/aleegeco/Distributed_Autonomous_Systems_Project/blob/main/Project_1.pdf) of the [Distributed Autonomous Systems course](https://www.unibo.it/en/teaching/course-unit-catalogue/course-unit/2021/454490).
 
 ## Task 1: Distributed Classification via Neural Networks
@@ -19,7 +19,7 @@ the shape that the agents should maintain, then we have to compute appropriate c
 This kind of problem distinguish between two type of agents: leaders and followers. Leaders motion are always pre-determined, instead followers implement
 time-varying control actions to follow the leaders and maintain the formation.  
 
-# Run Task 2
+### Run Task 2
 In order to run this part of the code, it is necessary to have installed *ROS2-foxy* on your computer.
 '''
 source /opt/ros/foxy/setup.bash
