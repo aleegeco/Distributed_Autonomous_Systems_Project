@@ -8,11 +8,23 @@ This GitHub page contains solutions to [Project N°1](https://github.com/aleegec
 ## Task 1: Distributed Classification via Neural Networks
 In this task our goal is to compute the backpropagation of a Neural Network to solve a basic classification problem, but in a Distributed framework where more than a NN concur to 
 correctly identify the chosen digit.  
-First, we have defined a single Neural Networks which is able to solve the task. Then, we moved forward introducing the distributed framework (by using communication graph) and solving it using
+First, we have defined a single Neural Networks which is able to solve the task. Then, we moved forward introducing the distributed framework (by using a communication graph) and solving the task by using
 the *distributed gradient tracking* to reach consensus among agents.  
-The obtained results are visible in the *Images* folder.
+The executable *single_neural_network.py* contains the single NN, whereas *distributed_neural_network.py* implements the
+distributed gradient tracking simulating N different neural networks trying to reach consensus. The obtained results are visible in the *Images* folder.
 
 ## Task 2: Formation Control by Bearing Based Maneuvering
+The second part of the project, deals with a formation control of an arbitrary number of agents. First, we have to define 
+the shape that the agents should maintain, then we have to compute appropriate control actions to make it possible.
+This kind of problem distinguish between two type of agents: leaders and followers. Leaders motion are always pre-determined, instead followers implement
+time-varying control actions to follow the leaders and maintain the formation.  
+
+# Run Task 2
+In order to run this part of the code, it is necessary to have installed *ROS2-foxy* on your computer.
+'''
+source /opt/ros/foxy/setup.bash
+'''
+
 
 
 ## Students 
