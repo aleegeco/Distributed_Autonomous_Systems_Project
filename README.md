@@ -1,5 +1,5 @@
 ![Minimum Python version >= 3.0](https://badgen.net/badge/python/3.x/blue)
-![License](https://badgen.net/badge/Licence/Unknown/blue)
+![License](https://badgen.net/badge/license/GPL-3.0/red)
 
 
 # Distributed Autonomous Systems Course Project N°1
