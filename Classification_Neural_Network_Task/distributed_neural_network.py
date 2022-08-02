@@ -9,30 +9,28 @@ from Function_Task_1 import MSE as cost_function
 
 np.random.seed(0) # generate random number (always the same seed)
 
-
 BALANCING = True
 FIGURE = True
 PRINT = False
 SAVE = True
-# chosen digit to wor
+# chosen digit to classify
 LuckyNumber = 6
 
-epochs = 250
+epochs = 200
 stepsize = 0.01
 
-
-# Graph parameters
+# Graph parameters - To simulate distributed behaviour
 NN = 4  # Number of agents
-p_ER = 0.4  # Probability to spawn an edge
+p_ER = 0.4  # Probability of spawning an edge
 I_NN = np.identity(NN, dtype=int)  # necessary to build the Adj
 
 dim_train_agent = 50  # Images for each agent
-dim_test_agent = int(0.5*dim_train_agent) # Test Images for each agent
+dim_test_agent = int(0.5*dim_train_agent) # test Images for each agent
 
-# Data acquisition and processing
+# Data acquisition and processing from MNIST dataset
 (x_train, y_train), (x_test, y_test) = mnist.load_data()
 
-# adjusting the type of the data contained in the arrays in this way they can be also negative
+# adjusting the type of the data contained in the arrays in this way they can also be negative
 y_train = y_train.astype(np.int8)
 y_test = y_test.astype(np.int8)
 
@@ -65,7 +63,7 @@ while True:
 #  Metropolis-Hastings method to obtain a doubly-stochastic matrix
 
 WW = np.zeros((NN, NN))  # Initializing weighting matrix
-
+# For cycle to compute the weighted adjacency matrix
 for ii in range(NN):
     N_ii = np.nonzero(Adj[ii])[0]  # In-Neighbors of node i
     deg_ii = len(N_ii)
@@ -153,7 +151,6 @@ for agent in range(NN):
 for k in range(epochs-1):
     for agent in range(NN):
         # Neural Network evaluation
-        # stepsize = 1/2*(k+1)
         for image in range(dim_train_agent):
             temp_data = data_train[agent, image]  # Pick the image fo the forward pass
             temp_label = label_train[agent, image]  # Pick the right label to evaluate the cost function
@@ -165,7 +162,7 @@ for k in range(epochs-1):
             temp_delta_u = backward_pass(xx, uu[k, agent], lambdaT, T, dim_layer)
             delta_u[k, agent] += temp_delta_u
 
-    # Gradient Tracking Algorithm
+    # Causal Gradient Tracking Algorithm
     print(f'{k}\t', end='')
     for agent in range(NN):
         uu[k+1, agent] = WW[agent, agent]*uu[k, agent]
@@ -183,6 +180,7 @@ for k in range(epochs-1):
         else:
             print(f'{J[k, agent]:4.2f}\t \t{np.linalg.norm(delta_u[k, agent]):4.2f}\t \t', end='\t \t')
 
+# Save the results to plot them easily by using the "plot.py" executable
 if SAVE:
     np.save('store_data/epochs.npy', epochs, allow_pickle=True)
     np.save('store_data/NN.npy', NN, allow_pickle=True)
@@ -191,13 +189,13 @@ if SAVE:
     np.save('store_data/uu.npy', uu, allow_pickle=True)
 
 
-
+# simple plot of the cost function over the epochs
 _, ax = plt.subplots()
 ax.plot(range(epochs), J)
 ax.title.set_text('J')
 plt.show()
 
-
+# validation function which computes and print the % of correct classification with some other useful info
 val_function(uu, data_test, label_test, dim_test_agent, NN, dim_layer, T)
 
 
