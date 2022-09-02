@@ -1,7 +1,6 @@
 import numpy as np
 
 
-
 def sigmoid_fn(xi):
     return 1 / (1 + np.exp(-xi))
 
@@ -28,7 +27,6 @@ def sigmoid_fnPosNeg(xi):
     return 2 / (1 + np.exp(-xi + 1e-10)) - 1
 
 
-# Derivative of Activation Function
 def sigmoid_fn_derivativePosNeg(xi):
     return 2 * sigmoid_fn(xi) * (1 - sigmoid_fn(xi))
 

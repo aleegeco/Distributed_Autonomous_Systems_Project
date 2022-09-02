@@ -173,7 +173,7 @@ for k in range(epochs-1):
         zz[k+1, agent] = WW[agent, agent]*zz[k, agent] - stepsize*WW[agent, agent]*delta_u[k, agent]
         for neigh in G.neighbors(agent):
             zz[k+1, agent] += WW[agent, neigh]*zz[k, neigh] - stepsize*WW[agent, neigh]*delta_u[k, neigh]
-        zz[k+1, agent] += stepsize*delta_u[k, agent]  # not sure that this is needed
+        zz[k+1, agent] += stepsize*delta_u[k, agent]
 
         if agent == NN - 1:
             print(f'{J[k, agent]:4.2f}\t \t{np.linalg.norm(delta_u[k, agent]):4.2f}\t \t')
@@ -197,6 +197,3 @@ plt.show()
 
 # validation function which computes and print the % of correct classification with some other useful info
 val_function(uu, data_test, label_test, dim_test_agent, NN, dim_layer, T)
-
-
-print('DAJE TUTTO OK')
