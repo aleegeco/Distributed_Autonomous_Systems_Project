@@ -12,12 +12,11 @@ def inference_dynamics(xt, ut):
         output:
               xtp next state
     """
-
     dim_layer = np.shape(xt)[0]
     xtp = np.zeros(dim_layer)
+
     for ell in range(dim_layer):
         temp = xt @ ut[ell, 1:] + ut[ell, 0]  # including the bias
-
         xtp[ell] = act_function(temp)  # x' * u_ell
 
     return xtp
@@ -34,10 +33,16 @@ def forward_pass(uu, x0, T, d):
         output:
               xx state trajectory: x[1],x[2],..., x[T]
     """
+
+    ### MODIFIED IN ORDER TO MATCH THE WANTED STRUCTURE OF THE NN:
+    ## the layers have fixed dimension because we have used tensors instead of lists
+    ## so we impose that in the last layer only the first neuron evolves, and the others are set to zero (no evolution)
+
     xx = np.zeros((T, d))
     xx[0] = x0
 
     for t in range(T - 1):
+        # last layer has only one neuron evolution
         if t == T-2:
             temp = xx[t] @ uu[t,0, 1:] + uu[t,0, 0]
             xx[t + 1, 0] = act_function(temp)
@@ -60,16 +65,19 @@ def adjoint_dynamics(ltp, xt, ut, d, t, T):
               llambda_t next costate
               delta_ut loss gradient wrt u_t
     """
+
+    ### MODIFIED IN ORDER TO MATCH THE WANTED STRUCTURE OF THE NN:
+    ## the layers have fixed dimension because we have used tensors instead of lists
+    ## so we impose that in the last layer only the first neuron evolves, and the others are set to zero (no evolution)
     df_dx = np.zeros((d, d))
     df_du = np.zeros((d, (d+1)))
 
     Delta_ut = np.zeros((d, d + 1))
-
+    # last layer has only one neuron evolution
     if t == T-2:
         dsigma_j = der_ac_function(xt @ ut[0, 1:] + ut[0, 0])
 
         df_dx[:, 0] = ut[0, 1:] * dsigma_j
-        # df_du[j, XX] = dsigma_j*np.hstack([1,xt])
 
         # B'@ltp
         Delta_ut[0, 0] = ltp[0] * dsigma_j
@@ -80,15 +88,12 @@ def adjoint_dynamics(ltp, xt, ut, d, t, T):
             dsigma_j = der_ac_function(xt @ ut[j, 1:] + ut[j, 0])
 
             df_dx[:, j] = ut[j, 1:] * dsigma_j
-            # df_du[j, :] = np.hstack([1, xt])*dsigma_j
-
             # B'@ltp
             Delta_ut[j, 0] = ltp[j]*dsigma_j
             Delta_ut[j, 1:] = xt*ltp[j]*dsigma_j
 
     lt = df_dx @ ltp  # A'@ltp
     # Delta_ut = df_du@ltp
-
     return lt, Delta_ut
 
 
@@ -103,29 +108,29 @@ def backward_pass(xx, uu, llambdaT, T, d):
               llambda costate trajectory
               delta_u costate output, i.e., the loss gradient
     """
-
     llambda = np.zeros((T, d))
     llambda[-1] = llambdaT
-
     Delta_u = np.zeros((T - 1, d, d + 1))
 
     for t in reversed(range(T - 1)):  # T-2,...,1,0
-
         llambda[t], Delta_u[t] = adjoint_dynamics(llambda[t + 1], xx[t], uu[t], d, t, T)
 
     return Delta_u
 
-
+## COST FUNCTIONS
+# Means Squared Error
 def MSE(predicted: int, label: int):
     J = np.linalg.norm(predicted - label)**2
     grad_J = 2 * (predicted - label)
     return J, grad_J
 
+# BInary Cross Entropy
 def BCE(predicted: int, label: int):
     J = - label * np.log(predicted + 1e-10) - (1 - label) * np.log(1 - predicted + 1e-10)
     grad_J = - label / (predicted + 1e-10) + (1 - label) / (1 - predicted + 1e-10)
     return J, grad_J
 
+# VALIDATION FUNCTION
 def val_function(uu, data_test, label_test, dim_test_agent, NN, dim_layer, T):
 
     for agent in range(NN):
