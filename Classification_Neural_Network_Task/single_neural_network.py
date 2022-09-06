@@ -2,7 +2,6 @@ import numpy as np
 from keras.datasets import mnist
 from sklearn.model_selection import train_test_split
 import matplotlib.pyplot as plt  # this library will be used for data visualization
-import networkx as nx  # library for network creation/visualization/manipulation
 from Function_Task_1 import *
 from imblearn.under_sampling import RandomUnderSampler
 from collections import Counter
@@ -20,7 +19,7 @@ epochs = 50
 stepsize = 0.01
 
 train_images = 200
-test_images = 200
+test_images = 80
 
 # Data acquisition and processing
 (x_train, y_train), (x_test, y_test) = mnist.load_data()
@@ -89,16 +88,18 @@ for k in range(epochs - 1):
     uu[k + 1] = uu[k] - stepsize * Delta_u
     print(f'Iteration: {k}, Loss function: {J[k]:4.3f}, Delta_u: {delta_u_store[k]:4.3f}')
 
-plt.semilogy(range(epochs-1), J[:-1])
+plt.plot(range(epochs-1), J[:-1],linewidth=2)
 plt.title('$J$')
 plt.xlabel("iterations")
 plt.ylabel("$J(.)$")
+plt.grid()
 plt.show()
 
 plt.plot(range(epochs), delta_u_store)
 plt.title('$\Delta u$')
 plt.xlabel("iterations")
 plt.ylabel("$\Delta u$")
+plt.grid()
 plt.show()
 
 data_test = x_test_vct[:test_images]

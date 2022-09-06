@@ -96,7 +96,6 @@ def kron_dynamical_matrix(B: np.array, NN: int, n_leaders: int, k_p: int, k_v: i
 
 def acc_profile(n_leaders: int, n_letters: int, dd: int, n_x: int, MAX_ITERS: int,
                 transient: int, step: int, Node_pos: np.array, xx_init: np.array):
-
     acc_profile_store = np.zeros((n_leaders, dd, MAX_ITERS+2))
     for agent in range(n_leaders):
         for letter in range(n_letters):
@@ -117,7 +116,7 @@ def acc_profile(n_leaders: int, n_letters: int, dd: int, n_x: int, MAX_ITERS: in
                 acc_profile_x = quintic_fun_x.qdd
                 acc_profile_y = quintic_fun_y.qdd
 
-            acc_profile_store[agent, 0, range(letter*step, (letter*step)+transient)] = acc_profile_x
+            acc_profile_store[agent, 0, range(letter*step, (letter*step) + transient)] = acc_profile_x
             acc_profile_store[agent, 1, range(letter*step, (letter * step) + transient)] = acc_profile_y
     return acc_profile_store
 
@@ -159,9 +158,7 @@ def update_dynamics(dt: int, self):
             index_i = node_j*dd + np.arange(dd)
             self.store_acc[index_i, self.tt] = vel_j  # store the acceleration to compute the derivative
             self.error_pos[self.agent_id, node_j, :] += (pos_i - pos_j)*dt  # increase the sum for the integral term
-
             Pg_ij = self.Pg_stack_word_ii[self.current_lett, node_j, :, :]  # set the Pg_ij* as a variable to make the code clearer
-
 
             if self.leader_acceleration:
                 vel_dot_j = calc_derivative(self, node_j) # numerical derivative for neighbors acceleration

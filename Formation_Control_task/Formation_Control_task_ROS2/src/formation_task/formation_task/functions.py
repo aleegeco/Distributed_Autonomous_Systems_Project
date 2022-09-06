@@ -187,7 +187,7 @@ def piecewise_acc(self):
     n_x = np.shape(self.x_i)[0]
     dd = n_x//2
     time = np.linspace(0, self.max_iters, self.max_iters + 2)
-    tg = quintic(0, 1*10e2, time)
+    tg = quintic(0, 10e2, time)
     acc = 100*tg.qdd
     acc_t = acc[self.tt]
     acc_t = np.ones(dd)*acc_t
