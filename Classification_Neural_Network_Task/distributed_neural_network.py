@@ -20,11 +20,11 @@ epochs = 200
 stepsize = 0.01
 
 # Graph parameters - To simulate distributed behaviour
-NN = 4  # Number of agents
-p_ER = 0.4  # Probability of spawning an edge
+NN = 8  # Number of agents
+p_ER = 0.3  # Probability of spawning an edge
 I_NN = np.identity(NN, dtype=int)  # necessary to build the Adj
 
-dim_train_agent = 50  # Images for each agent
+dim_train_agent = 25  # Images for each agent
 dim_test_agent = int(0.5*dim_train_agent) # test Images for each agent
 
 # Data acquisition and processing from MNIST dataset
