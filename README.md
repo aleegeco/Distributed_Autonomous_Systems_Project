@@ -11,20 +11,43 @@ correctly identify the chosen digit.
 First, we have defined a single Neural Networks which is able to solve the task. Then, we moved forward introducing the distributed framework (by using a communication graph) and solving the task by using
 the *distributed gradient tracking* to reach consensus among agents.  
 The executable *single_neural_network.py* contains the single NN, whereas *distributed_neural_network.py* implements the
-distributed gradient tracking simulating N different neural networks trying to reach consensus. The obtained results are visible in the *Images* folder.
+distributed gradient tracking simulating N different neural networks trying to reach consensus. The obtained results are visible in the first chapter of the [report](https://github.com/aleegeco/Distributed_Autonomous_Systems_Project/blob/main/Distributed_Autonomous_Systems___Report.pdf).
 
 ## Task 2: Formation Control by Bearing Based Maneuvering
 The second part of the project, deals with a formation control of an arbitrary number of agents. First, we have to define 
 the shape that the agents should maintain, then we have to compute appropriate control actions to make it possible.
 This kind of problem distinguish between two type of agents: leaders and followers. Leaders motion are always pre-determined, instead followers implement
-time-varying control actions to follow the leaders and maintain the formation.  
+time-varying control actions to follow the leaders and maintain the formation. 
+The model formulation is taken from our reference [1] and a deeper discussion on our decisions is in the second chapter of the [report](https://github.com/aleegeco/Distributed_Autonomous_Systems_Project/blob/main/Distributed_Autonomous_Systems___Report.pdf).
 
 ### Run Task 2
-In order to run this part of the code, it is necessary to have installed *ROS2-foxy* on your computer.
-'''
+In order to run this part of the code, it is necessary to have installed *ROS2-foxy* on your computer. 
+Type the following command to source ROS2 (consider to add it to ~/.bashrc)
+```
 source /opt/ros/foxy/setup.bash
-'''
-
+```
+Then go inside the package folder and build it using
+```
+cd ~/Formation_Control_task/Formation_Control_task_ROS2 
+colcon build
+```
+If you want to make changes at the code without compiling it again use the following command instead
+```
+colcon build --symlink-install
+```
+After compiling it, let's source the install folder
+```
+source install/setup.bash
+```
+Finally, if you want to launch the simple formation just use
+```
+ros2 launch formation_control_task formations.launch.py
+```
+If you want to launch the word formation instead use
+```
+ros2 launch formation_control_task formations_letters.launch.py
+```
+*NB* In both launch files there are some global parameters to change, like integral action, leaders moving or not, which formation you want to perform, ecc..
 
 
 ## Students 
