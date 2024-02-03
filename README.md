@@ -19,13 +19,21 @@ In-depth results may be seen in the first chapter of [report](https://github.com
 ## Task 2: Formation Control by Bearing Based Maneuvering
 The second part of the project, deals with a formation control of an arbitrary number of agents. First, we have to define 
 the shape that the agents should maintain, then we have to compute appropriate control actions to make it possible.
-This kind of problem distinguish between two type of agents: leaders and followers. Leaders motion are always pre-determined, instead followers implement
-time-varying control actions to follow the leaders and maintain the formation. 
-The model formulation is taken from our reference [1] and a deeper discussion on our decisions is in the second chapter of the [report](https://github.com/aleegeco/Distributed_Autonomous_Systems_Project/blob/main/Distributed_Autonomous_Systems___Report.pdf).
 
 Here a sample video of the result, agents follow the word 'DAS':
 
 https://github.com/aleegeco/Distributed_Autonomous_Systems_Project/assets/59066644/b464b228-ca77-41e7-97f5-b74ebbaec768
+
+This kind of problem distinguish between two type of agents: leaders and followers. Leaders motion are always pre-determined, instead followers implement
+time-varying control actions to follow the leaders and maintain the formation. 
+
+Several possibilities have been handled: integral action, time-varying leaders position, different agents formations, etc
+
+Everything can be chosen by changing a global variable before running the simualtion. 
+
+The model formulation is taken from our reference [1] and a deeper discussion on our decisions is in the second chapter of the [report](https://github.com/aleegeco/Distributed_Autonomous_Systems_Project/blob/main/Distributed_Autonomous_Systems___Report.pdf).
+
+
 
 
 
